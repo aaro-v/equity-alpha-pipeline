@@ -1,23 +1,22 @@
-# Project Brief
+# Project Scope
 
-Build a resume-ready cross-sectional equity alpha research pipeline using
-Python, pandas, NumPy, scikit-learn, and PyTorch.
+This repository implements an offline cross-sectional equity alpha research
+pipeline in Python, pandas, NumPy, scikit-learn, and PyTorch. The pipeline uses
+deterministic synthetic data to demonstrate research engineering practices
+without making claims about live-market profitability.
 
-The project should work offline with deterministic synthetic point-in-time
-sample data while clearly documenting what would change for live institutional
-data. It should avoid unsupported profitability claims.
+The sample panel is designed to resemble a US equity universe with prices,
+sectors, market caps, fundamentals, liquidity, benchmark returns, and explicit
+point-in-time availability dates. Factors cover value, momentum, quality,
+volatility, size, beta, and liquidity-style signals. Feature processing includes
+sector and beta neutralization, cross-sectional ranking, and forward-return
+labels that are kept out of the feature set.
 
-Core deliverables:
+The modeling workflow runs purged walk-forward validation across ridge,
+tree-based, and small neural-network forecasters. Evaluation artifacts include
+IC, rank IC, turnover, transaction costs, drawdown, sector attribution,
+long-short portfolio returns, generated reports, and reproducible CLI outputs.
 
-- deterministic US-equity-like panel data with prices, sectors, market caps,
-  fundamentals, benchmark returns, and point-in-time availability dates
-- factor construction for value, momentum, quality, volatility, size, beta, and
-  liquidity-style signals
-- sector and beta neutralization, cross-sectional ranking, portfolio formation
-- purged and embargoed walk-forward validation
-- IC, rank IC, decay curves, turnover, cost-adjusted Sharpe, drawdown, sector
-  attribution, regime attribution
-- linear, gradient-boosted, and small PyTorch neural-net forecasters
-- factor crowding and decay analysis via rolling cross-sectional regressions
-  and bootstrap stability tests
-- CLI commands, tests, generated report, and clean README
+The implementation is intended as a compact, inspectable example of the
+research workflow that would be adapted for institutional point-in-time market
+and fundamentals data in production.

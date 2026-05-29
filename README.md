@@ -5,21 +5,23 @@ factor construction, point-in-time hygiene, sector and beta neutralization,
 ranking, portfolio formation, purged walk-forward validation, and model
 comparison across linear, tree-based, and small neural-network forecasters.
 
-This repository is being built as a resume-ready research engineering project.
-Generated sample results are reproducible and use deterministic synthetic data
-unless explicitly documented otherwise.
+This completed research engineering project demonstrates a reproducible
+cross-sectional equity alpha workflow on deterministic synthetic data unless
+explicitly documented otherwise.
 
 ## Target Resume Bullets
 
-- End-to-end pipeline for cross-sectional equity alpha: factor construction,
-  sector/beta neutralization, ranking, and portfolio formation on a US equity
-  universe with point-in-time data hygiene.
-- Implemented purged, embargoed walk-forward validation; evaluated factors with
-  IC, rank IC, decay curves, turnover, and cost-adjusted Sharpe across regimes
-  and sectors.
-- Compared linear, gradient-boosted, and small neural-net return forecasters;
-  analyzed factor crowding and decay via rolling cross-sectional regressions
-  and bootstrap stability tests.
+- Built a deterministic point-in-time synthetic equity panel with prices,
+  sectors, market caps, fundamentals, liquidity, benchmark returns, and
+  availability dates.
+- Constructed value, momentum, quality, volatility, size, beta, and liquidity
+  factors with sector/beta neutralization, cross-sectional ranking, and
+  forward-return labels excluded from features.
+- Implemented purged walk-forward validation comparing ridge, tree-based, and
+  small neural-network return forecasters.
+- Evaluated factor and portfolio behavior with IC, rank IC, turnover,
+  transaction costs, drawdown, sector attribution, long-short returns, and
+  reproducible CLI artifacts.
 
 ## Development
 
