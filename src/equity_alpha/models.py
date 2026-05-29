@@ -43,7 +43,7 @@ def predict_baselines(
 
 
 def model_columns(predictions: pd.DataFrame) -> list[str]:
-    protected = {"date", "asset", "sector", "label", "future_return"}
+    protected = {"date", "asset", "sector", "label", "future_return", "fold"}
     return [column for column in predictions.columns if column not in protected]
 
 

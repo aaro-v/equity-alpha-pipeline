@@ -59,13 +59,13 @@ def _render_report(metrics: pd.DataFrame, sector_attribution: pd.DataFrame, char
             "",
             "## Model Summary",
             "",
-            metrics.to_markdown(index=False, floatfmt=".4f"),
+            _markdown_table(metrics),
             "",
             f"Best sample model by cost-adjusted Sharpe: **{best['model']}**.",
             "",
             "## Top Sector Rank ICs",
             "",
-            sector_summary.to_markdown(index=False, floatfmt=".4f"),
+            _markdown_table(sector_summary),
             "",
             "## Equity Curve",
             "",
@@ -80,3 +80,21 @@ def _render_report(metrics: pd.DataFrame, sector_attribution: pd.DataFrame, char
             "",
         ]
     )
+
+
+def _markdown_table(frame: pd.DataFrame) -> str:
+    columns = list(frame.columns)
+    rows = [
+        "| " + " | ".join(columns) + " |",
+        "| " + " | ".join(["---"] * len(columns)) + " |",
+    ]
+    for _, row in frame.iterrows():
+        values = [_format_value(row[column]) for column in columns]
+        rows.append("| " + " | ".join(values) + " |")
+    return "\n".join(rows)
+
+
+def _format_value(value: object) -> str:
+    if isinstance(value, float):
+        return f"{value:.4f}"
+    return str(value)

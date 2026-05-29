@@ -24,8 +24,56 @@ unless explicitly documented otherwise.
 ## Development
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 pytest
 ```
+
+## Run The Sample Pipeline
+
+```bash
+equity-alpha run --output-dir reports/generated
+```
+
+The command generates deterministic synthetic data in memory, constructs
+point-in-time factors, creates forward excess-return labels, runs purged
+walk-forward validation, fits ridge/tree/neural baselines, forms long-short
+portfolios, and writes artifacts:
+
+- `reports/generated/metrics.csv`
+- `reports/generated/portfolio_returns.csv`
+- `reports/generated/sector_attribution.csv`
+- `reports/generated/predictions.parquet`
+- `reports/generated/equity_curve.png`
+- `reports/generated/research_report.md`
+
+For a faster smoke run without PyTorch training:
+
+```bash
+equity-alpha run --no-include-neural --assets 50 --days 500
+```
+
+To write only the deterministic sample panel:
+
+```bash
+equity-alpha sample-data --output data/cache/sample_panel.parquet
+```
+
+## Implemented Scope
+
+- Deterministic synthetic US-equity-like panel with prices, sectors, market
+  caps, fundamentals, liquidity, benchmark returns, and explicit availability
+  dates.
+- Point-in-time factor construction for value, momentum, quality, volatility,
+  size, beta, and liquidity signals.
+- Sector and beta neutralization, cross-sectional ranking, and future labels
+  that are excluded from features.
+- Purged and embargo-stepped walk-forward validation.
+- Ridge, histogram gradient boosting, and small PyTorch neural-network
+  forecasters.
+- IC, rank IC, turnover, cost-adjusted Sharpe, drawdown, sector attribution,
+  long-short portfolio returns, and generated Markdown/CSV/PNG artifacts.
+
+The generated outputs are for engineering validation only. They use synthetic
+data and should not be read as evidence of live-market profitability.
