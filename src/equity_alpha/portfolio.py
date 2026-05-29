@@ -25,7 +25,8 @@ def evaluate_predictions(
         portfolio = _portfolio_returns(predictions, model, cost_bps=cost_bps, quantile=quantile)
         returns = portfolio["net_return"]
         annualizer = np.sqrt(252 / 21)
-        sharpe = 0.0 if returns.std(ddof=0) == 0 else annualizer * returns.mean() / returns.std(ddof=0)
+        return_std = returns.std(ddof=0)
+        sharpe = 0.0 if return_std == 0 else annualizer * returns.mean() / return_std
         drawdown = _max_drawdown(returns)
 
         metric_rows.append(
@@ -62,7 +63,9 @@ def _portfolio_returns(
         weights.loc[longs["asset"]] = 1.0 / n_names
         weights.loc[shorts["asset"]] = -1.0 / n_names
 
-        gross_return = float((weights.reindex(frame["asset"]).to_numpy() * frame["future_return"]).sum())
+        gross_return = float(
+            (weights.reindex(frame["asset"]).to_numpy() * frame["future_return"]).sum()
+        )
         if previous_weights is None:
             turnover = float(weights.abs().sum())
         else:
@@ -92,7 +95,9 @@ def _sector_attribution(predictions: pd.DataFrame, model: str) -> list[dict[str,
     rows: list[dict[str, float | str]] = []
     for sector, frame in predictions.groupby("sector"):
         rank_ic = frame.groupby("date").apply(
-            lambda date_frame, col=model: _safe_corr(date_frame[col].rank(), date_frame["label"].rank())
+            lambda date_frame, col=model: _safe_corr(
+                date_frame[col].rank(), date_frame["label"].rank()
+            )
         )
         rows.append({"model": model, "sector": sector, "rank_ic": float(rank_ic.mean())})
     return rows

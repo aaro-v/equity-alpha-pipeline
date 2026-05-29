@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Annotated
 
 import typer
 
@@ -22,10 +23,12 @@ def version() -> None:
 
 @app.command()
 def sample_data(
-    output: Path = typer.Option(Path("data/cache/sample_panel.parquet"), help="Output parquet path."),
-    assets: int = typer.Option(90, min=10, help="Number of synthetic assets."),
-    days: int = typer.Option(640, min=180, help="Number of business days."),
-    seed: int = typer.Option(7, help="Deterministic random seed."),
+    output: Annotated[Path, typer.Option(help="Output parquet path.")] = Path(
+        "data/cache/sample_panel.parquet"
+    ),
+    assets: Annotated[int, typer.Option(min=10, help="Number of synthetic assets.")] = 90,
+    days: Annotated[int, typer.Option(min=180, help="Number of business days.")] = 640,
+    seed: Annotated[int, typer.Option(help="Deterministic random seed.")] = 7,
 ) -> None:
     """Generate deterministic synthetic point-in-time sample data."""
 
@@ -37,11 +40,15 @@ def sample_data(
 
 @app.command()
 def run(
-    output_dir: Path = typer.Option(Path("reports/generated"), help="Artifact output directory."),
-    assets: int = typer.Option(90, min=20, help="Number of synthetic assets."),
-    days: int = typer.Option(640, min=500, help="Number of business days."),
-    seed: int = typer.Option(7, help="Deterministic random seed."),
-    include_neural: bool = typer.Option(True, help="Fit the small PyTorch neural baseline."),
+    output_dir: Annotated[Path, typer.Option(help="Artifact output directory.")] = Path(
+        "reports/generated"
+    ),
+    assets: Annotated[int, typer.Option(min=20, help="Number of synthetic assets.")] = 90,
+    days: Annotated[int, typer.Option(min=500, help="Number of business days.")] = 640,
+    seed: Annotated[int, typer.Option(help="Deterministic random seed.")] = 7,
+    include_neural: Annotated[
+        bool, typer.Option(help="Fit the small PyTorch neural baseline.")
+    ] = True,
 ) -> None:
     """Run the full deterministic cross-sectional alpha research pipeline."""
 

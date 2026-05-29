@@ -5,7 +5,6 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-
 SECTORS: tuple[str, ...] = (
     "Communication Services",
     "Consumer Discretionary",
@@ -68,9 +67,15 @@ def generate_sample_panel(config: SampleDataConfig | None = None) -> pd.DataFram
         market_cap = shares * prices
 
         drift = np.sin(t / 45.0) * 0.05
-        book_to_price = np.exp(-0.2 + 0.45 * value + drift + rng.normal(0.0, 0.03, config.n_assets))
-        gross_margin = np.clip(0.35 + 0.08 * quality + rng.normal(0.0, 0.02, config.n_assets), 0.05, 0.9)
-        accruals = np.clip(0.08 - 0.04 * quality + rng.normal(0.0, 0.015, config.n_assets), -0.2, 0.4)
+        book_to_price = np.exp(
+            -0.2 + 0.45 * value + drift + rng.normal(0.0, 0.03, config.n_assets)
+        )
+        gross_margin = np.clip(
+            0.35 + 0.08 * quality + rng.normal(0.0, 0.02, config.n_assets), 0.05, 0.9
+        )
+        accruals = np.clip(
+            0.08 - 0.04 * quality + rng.normal(0.0, 0.015, config.n_assets), -0.2, 0.4
+        )
         debt_to_equity = np.exp(0.1 - 0.2 * quality + rng.normal(0.0, 0.08, config.n_assets))
         dollar_volume = base_liquidity * np.exp(rng.normal(0.0, 0.25, config.n_assets))
 

@@ -26,7 +26,9 @@ def make_walk_forward_splits(
     """Create rolling walk-forward splits with a purge gap before each test window."""
 
     config = config or WalkForwardConfig()
-    unique_dates = pd.DatetimeIndex(pd.Series(pd.to_datetime(dates)).drop_duplicates().sort_values())
+    unique_dates = pd.DatetimeIndex(
+        pd.Series(pd.to_datetime(dates)).drop_duplicates().sort_values()
+    )
     splits: list[WalkForwardSplit] = []
 
     test_start = config.train_days + config.purge_days
@@ -39,7 +41,9 @@ def make_walk_forward_splits(
         train_dates = unique_dates[train_start:train_end]
         test_dates = unique_dates[test_start:test_end]
         if len(train_dates) and len(test_dates):
-            splits.append(WalkForwardSplit(fold=fold, train_dates=train_dates, test_dates=test_dates))
+            splits.append(
+                WalkForwardSplit(fold=fold, train_dates=train_dates, test_dates=test_dates)
+            )
             fold += 1
 
         test_start += config.test_days + config.embargo_days

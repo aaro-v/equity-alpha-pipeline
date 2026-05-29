@@ -3,7 +3,6 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-
 RAW_FEATURES: tuple[str, ...] = (
     "value",
     "momentum",
@@ -55,9 +54,13 @@ def build_research_frame(panel: pd.DataFrame, horizon: int = 21) -> pd.DataFrame
 
     data["value"] = np.log(data["book_to_price"].clip(lower=1e-6))
     data["momentum"] = by_asset["price"].pct_change(126).shift(5)
-    data["quality"] = data["gross_margin"] - data["accruals"] - 0.15 * np.log1p(data["debt_to_equity"])
-    data["low_volatility"] = -by_asset["daily_return"].rolling(63, min_periods=21).std().reset_index(
-        level=0, drop=True
+    data["quality"] = (
+        data["gross_margin"] - data["accruals"] - 0.15 * np.log1p(data["debt_to_equity"])
+    )
+    data["low_volatility"] = -(
+        by_asset["daily_return"].rolling(63, min_periods=21).std().reset_index(
+            level=0, drop=True
+        )
     )
     data["size"] = -np.log(data["market_cap"].clip(lower=1.0))
     data["liquidity"] = np.log(data["dollar_volume"].clip(lower=1.0))
@@ -82,7 +85,8 @@ def build_research_frame(panel: pd.DataFrame, horizon: int = 21) -> pd.DataFrame
         data[f"{feature}_neutral"] = data.groupby("date", group_keys=False).apply(
             lambda frame, col=f"{feature}_z": _neutralize(frame, col)
         )
-        data[f"{feature}_neutral_rank"] = data.groupby("date")[f"{feature}_neutral"].rank(pct=True) - 0.5
+        neutral_rank = data.groupby("date")[f"{feature}_neutral"].rank(pct=True)
+        data[f"{feature}_neutral_rank"] = neutral_rank - 0.5
 
     useful_columns = [
         "date",
@@ -93,7 +97,9 @@ def build_research_frame(panel: pd.DataFrame, horizon: int = 21) -> pd.DataFrame
         "future_benchmark_return",
         *FEATURE_COLUMNS,
     ]
-    research = data[useful_columns].replace([np.inf, -np.inf], np.nan).dropna().reset_index(drop=True)
+    research = (
+        data[useful_columns].replace([np.inf, -np.inf], np.nan).dropna().reset_index(drop=True)
+    )
     return research.sort_values(["date", "asset"], ignore_index=True)
 
 

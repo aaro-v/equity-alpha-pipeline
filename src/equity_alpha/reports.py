@@ -25,7 +25,8 @@ def write_artifacts(
     _plot_equity_curve(portfolio_returns, chart_path)
 
     report_path = output_dir / "research_report.md"
-    report_path.write_text(_render_report(metrics, sector_attribution, chart_path.name), encoding="utf-8")
+    report = _render_report(metrics, sector_attribution, chart_path.name)
+    report_path.write_text(report, encoding="utf-8")
     return report_path
 
 
@@ -74,7 +75,7 @@ def _render_report(metrics: pd.DataFrame, sector_attribution: pd.DataFrame, char
             "## Method Notes",
             "",
             "- Features are built only after synthetic availability dates are reached.",
-            "- Forward labels use future excess returns and are excluded from feature construction.",
+            "- Forward labels use future excess returns and stay out of feature construction.",
             "- Walk-forward splits use a purge gap before each test window and an embargo step.",
             "- Long-short returns include turnover-based transaction costs.",
             "",
