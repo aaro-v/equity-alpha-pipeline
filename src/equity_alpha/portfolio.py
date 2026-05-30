@@ -14,9 +14,7 @@ def evaluate_predictions(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Evaluate model forecasts with IC and long-short portfolio metrics."""
 
-    if holding_period_days <= 0:
-        msg = "holding_period_days must be positive"
-        raise ValueError(msg)
+    _validate_inputs(cost_bps=cost_bps, quantile=quantile, holding_period_days=holding_period_days)
 
     metric_rows: list[dict[str, float | str]] = []
     return_rows: list[pd.DataFrame] = []
@@ -54,6 +52,18 @@ def evaluate_predictions(
     portfolio_returns = pd.concat(return_rows, ignore_index=True)
     sector_attribution = pd.DataFrame(sector_rows)
     return metrics, portfolio_returns, sector_attribution
+
+
+def _validate_inputs(cost_bps: float, quantile: float, holding_period_days: int) -> None:
+    if holding_period_days <= 0:
+        msg = "holding_period_days must be positive"
+        raise ValueError(msg)
+    if cost_bps < 0:
+        msg = "cost_bps must be non-negative"
+        raise ValueError(msg)
+    if not 0 < quantile <= 0.5:
+        msg = "quantile must be greater than 0 and at most 0.5"
+        raise ValueError(msg)
 
 
 def _portfolio_returns(

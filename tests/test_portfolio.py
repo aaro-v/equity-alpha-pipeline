@@ -32,6 +32,17 @@ def test_sharpe_annualization_rejects_non_positive_holding_period() -> None:
         evaluate_predictions(_simple_predictions(), holding_period_days=0)
 
 
+def test_evaluation_rejects_negative_costs() -> None:
+    with pytest.raises(ValueError, match="cost_bps must be non-negative"):
+        evaluate_predictions(_simple_predictions(), cost_bps=-0.1)
+
+
+@pytest.mark.parametrize("quantile", [0.0, -0.1, 0.75])
+def test_evaluation_rejects_invalid_quantile(quantile: float) -> None:
+    with pytest.raises(ValueError, match="quantile must be greater than 0 and at most 0.5"):
+        evaluate_predictions(_simple_predictions(), quantile=quantile)
+
+
 def _simple_predictions() -> pd.DataFrame:
     rows = []
     date_returns = [
