@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import subprocess
+import sys
+
 from typer.testing import CliRunner
 
 from equity_alpha.cli import app
@@ -9,6 +12,17 @@ def test_cli_version() -> None:
     result = CliRunner().invoke(app, ["version"])
 
     assert result.exit_code == 0
+    assert "0.1.0" in result.stdout
+
+
+def test_cli_module_execution_prints_version() -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "equity_alpha.cli", "version"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
     assert "0.1.0" in result.stdout
 
 

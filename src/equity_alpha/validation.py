@@ -26,6 +26,7 @@ def make_walk_forward_splits(
     """Create rolling walk-forward splits with a purge gap before each test window."""
 
     config = config or WalkForwardConfig()
+    _validate_walk_forward_config(config)
     unique_dates = pd.DatetimeIndex(
         pd.Series(pd.to_datetime(dates)).drop_duplicates().sort_values()
     )
@@ -49,3 +50,18 @@ def make_walk_forward_splits(
         test_start += config.test_days + config.embargo_days
 
     return splits
+
+
+def _validate_walk_forward_config(config: WalkForwardConfig) -> None:
+    if config.train_days <= 0:
+        msg = "train_days must be positive"
+        raise ValueError(msg)
+    if config.test_days <= 0:
+        msg = "test_days must be positive"
+        raise ValueError(msg)
+    if config.purge_days < 0:
+        msg = "purge_days must be non-negative"
+        raise ValueError(msg)
+    if config.embargo_days < 0:
+        msg = "embargo_days must be non-negative"
+        raise ValueError(msg)

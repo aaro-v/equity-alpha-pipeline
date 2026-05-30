@@ -86,3 +86,7 @@ def run(
     typer.echo(result.metrics.to_string(index=False))
     if result.report_path is not None:
         typer.echo(f"\nReport: {result.report_path}")
+
+
+if __name__ == "__main__":
+    app()

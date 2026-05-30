@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import pandas as pd
+import pytest
+
 from equity_alpha.data import SampleDataConfig, generate_sample_panel
 from equity_alpha.features import build_research_frame
 from equity_alpha.models import ModelConfig
@@ -19,6 +22,24 @@ def test_walk_forward_splits_are_purged() -> None:
         assert split.train_dates.max() < split.test_dates.min()
         assert len(split.train_dates) <= config.train_days
         assert len(split.test_dates) == config.test_days
+
+
+@pytest.mark.parametrize(
+    ("config", "message"),
+    [
+        (WalkForwardConfig(train_days=0), "train_days must be positive"),
+        (WalkForwardConfig(test_days=0), "test_days must be positive"),
+        (WalkForwardConfig(purge_days=-1), "purge_days must be non-negative"),
+        (WalkForwardConfig(embargo_days=-1), "embargo_days must be non-negative"),
+    ],
+)
+def test_walk_forward_splits_reject_invalid_config(
+    config: WalkForwardConfig, message: str
+) -> None:
+    dates = pd.bdate_range("2021-01-01", periods=300)
+
+    with pytest.raises(ValueError, match=message):
+        make_walk_forward_splits(dates, config)
 
 
 def test_pipeline_runs_and_returns_metrics() -> None:
