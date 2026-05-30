@@ -7,9 +7,16 @@ from equity_alpha.models import model_columns
 
 
 def evaluate_predictions(
-    predictions: pd.DataFrame, cost_bps: float = 5.0, quantile: float = 0.2
+    predictions: pd.DataFrame,
+    cost_bps: float = 5.0,
+    quantile: float = 0.2,
+    holding_period_days: int = 21,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Evaluate model forecasts with IC and long-short portfolio metrics."""
+
+    if holding_period_days <= 0:
+        msg = "holding_period_days must be positive"
+        raise ValueError(msg)
 
     metric_rows: list[dict[str, float | str]] = []
     return_rows: list[pd.DataFrame] = []
@@ -24,7 +31,7 @@ def evaluate_predictions(
         )
         portfolio = _portfolio_returns(predictions, model, cost_bps=cost_bps, quantile=quantile)
         returns = portfolio["net_return"]
-        annualizer = np.sqrt(252 / 21)
+        annualizer = np.sqrt(252 / holding_period_days)
         return_std = returns.std(ddof=0)
         sharpe = 0.0 if return_std == 0 else annualizer * returns.mean() / return_std
         drawdown = _max_drawdown(returns)

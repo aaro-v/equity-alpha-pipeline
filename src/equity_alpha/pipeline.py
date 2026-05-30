@@ -53,7 +53,7 @@ def run_research_pipeline(
 
     all_predictions = pd.concat(fold_predictions, ignore_index=True)
     metrics, portfolio_returns, sector_attribution = evaluate_predictions(
-        all_predictions, cost_bps=config.cost_bps
+        all_predictions, cost_bps=config.cost_bps, holding_period_days=config.horizon
     )
     report_path = None
     if output_dir is not None:
