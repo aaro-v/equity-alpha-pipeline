@@ -56,6 +56,19 @@ For a faster smoke run without PyTorch training:
 equity-alpha run --no-include-neural --assets 50 --days 500
 ```
 
+Research controls can be set from the CLI for deterministic scenario checks:
+
+```bash
+equity-alpha run \
+  --horizon 10 \
+  --cost-bps 2.5 \
+  --train-days 126 \
+  --test-days 42 \
+  --purge-days 10 \
+  --embargo-days 5 \
+  --no-include-neural
+```
+
 To write only the deterministic sample panel:
 
 ```bash

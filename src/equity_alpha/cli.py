@@ -44,8 +44,26 @@ def run(
         "reports/generated"
     ),
     assets: Annotated[int, typer.Option(min=20, help="Number of synthetic assets.")] = 90,
-    days: Annotated[int, typer.Option(min=500, help="Number of business days.")] = 640,
+    days: Annotated[int, typer.Option(min=180, help="Number of business days.")] = 640,
     seed: Annotated[int, typer.Option(help="Deterministic random seed.")] = 7,
+    horizon: Annotated[
+        int, typer.Option(min=1, help="Forward-return horizon in business days.")
+    ] = 21,
+    cost_bps: Annotated[
+        float, typer.Option(min=0.0, help="One-way transaction cost in basis points.")
+    ] = 5.0,
+    train_days: Annotated[
+        int, typer.Option(min=20, help="Training window length in business days.")
+    ] = 252,
+    test_days: Annotated[
+        int, typer.Option(min=5, help="Test window length in business days.")
+    ] = 63,
+    purge_days: Annotated[
+        int, typer.Option(min=0, help="Gap between each training and test window.")
+    ] = 21,
+    embargo_days: Annotated[
+        int, typer.Option(min=0, help="Gap after each test window before the next fold.")
+    ] = 5,
     include_neural: Annotated[
         bool, typer.Option(help="Fit the small PyTorch neural baseline.")
     ] = True,
@@ -54,8 +72,15 @@ def run(
 
     config = PipelineConfig(
         sample_data=SampleDataConfig(n_assets=assets, n_days=days, seed=seed),
-        walk_forward=WalkForwardConfig(),
+        walk_forward=WalkForwardConfig(
+            train_days=train_days,
+            test_days=test_days,
+            purge_days=purge_days,
+            embargo_days=embargo_days,
+        ),
         models=ModelConfig(include_neural=include_neural),
+        horizon=horizon,
+        cost_bps=cost_bps,
     )
     result = run_research_pipeline(config, output_dir=output_dir)
     typer.echo(result.metrics.to_string(index=False))

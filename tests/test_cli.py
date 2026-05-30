@@ -22,3 +22,38 @@ def test_cli_sample_data_writes_file(tmp_path) -> None:
 
     assert result.exit_code == 0
     assert output.exists()
+
+
+def test_cli_run_accepts_research_controls(tmp_path) -> None:
+    output_dir = tmp_path / "reports"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "run",
+            "--output-dir",
+            str(output_dir),
+            "--assets",
+            "24",
+            "--days",
+            "260",
+            "--horizon",
+            "10",
+            "--cost-bps",
+            "2.5",
+            "--train-days",
+            "90",
+            "--test-days",
+            "30",
+            "--purge-days",
+            "10",
+            "--embargo-days",
+            "3",
+            "--no-include-neural",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert (output_dir / "metrics.csv").exists()
+    assert (output_dir / "research_report.md").exists()
+    assert "cost_adjusted_sharpe" in result.stdout
