@@ -56,3 +56,17 @@ def test_pipeline_runs_and_returns_metrics() -> None:
     assert result.predictions["fold"].nunique() >= 2
     assert result.portfolio_returns["net_return"].notna().all()
     assert result.sector_attribution["rank_ic"].notna().any()
+
+
+@pytest.mark.parametrize(
+    ("config", "message"),
+    [
+        (PipelineConfig(horizon=0), "horizon must be positive"),
+        (PipelineConfig(cost_bps=-0.1), "cost_bps must be non-negative"),
+    ],
+)
+def test_pipeline_rejects_invalid_top_level_config(
+    config: PipelineConfig, message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        run_research_pipeline(config)

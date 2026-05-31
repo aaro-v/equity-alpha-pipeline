@@ -37,6 +37,7 @@ def run_research_pipeline(
     """Run the deterministic sample cross-sectional alpha pipeline."""
 
     config = config or PipelineConfig()
+    _validate_pipeline_config(config)
     panel = generate_sample_panel(config.sample_data)
     research = build_research_frame(panel, horizon=config.horizon)
     splits = make_walk_forward_splits(research["date"], config.walk_forward)
@@ -71,3 +72,12 @@ def run_research_pipeline(
         predictions=all_predictions,
         report_path=report_path,
     )
+
+
+def _validate_pipeline_config(config: PipelineConfig) -> None:
+    if config.horizon <= 0:
+        msg = "horizon must be positive"
+        raise ValueError(msg)
+    if config.cost_bps < 0:
+        msg = "cost_bps must be non-negative"
+        raise ValueError(msg)
