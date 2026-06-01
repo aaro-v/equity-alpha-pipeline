@@ -37,6 +37,23 @@ def test_evaluation_rejects_negative_costs() -> None:
         evaluate_predictions(_simple_predictions(), cost_bps=-0.1)
 
 
+def test_evaluation_rejects_missing_prediction_columns() -> None:
+    predictions = _simple_predictions().drop(columns=["future_return", "sector"])
+
+    with pytest.raises(
+        ValueError, match="predictions missing required columns: future_return, sector"
+    ):
+        evaluate_predictions(predictions)
+
+
+def test_evaluation_rejects_frames_without_model_forecasts() -> None:
+    protected_columns = ["date", "asset", "sector", "label", "future_return"]
+    predictions = _simple_predictions().loc[:, protected_columns]
+
+    with pytest.raises(ValueError, match="at least one model forecast column"):
+        evaluate_predictions(predictions)
+
+
 @pytest.mark.parametrize("quantile", [0.0, -0.1, 0.75])
 def test_evaluation_rejects_invalid_quantile(quantile: float) -> None:
     with pytest.raises(ValueError, match="quantile must be greater than 0 and at most 0.5"):

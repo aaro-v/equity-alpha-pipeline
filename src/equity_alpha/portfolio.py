@@ -14,13 +14,23 @@ def evaluate_predictions(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Evaluate model forecasts with IC and long-short portfolio metrics."""
 
-    _validate_inputs(cost_bps=cost_bps, quantile=quantile, holding_period_days=holding_period_days)
+    _validate_inputs(
+        predictions=predictions,
+        cost_bps=cost_bps,
+        quantile=quantile,
+        holding_period_days=holding_period_days,
+    )
 
     metric_rows: list[dict[str, float | str]] = []
     return_rows: list[pd.DataFrame] = []
     sector_rows: list[dict[str, float | str]] = []
 
-    for model in model_columns(predictions):
+    models = model_columns(predictions)
+    if not models:
+        msg = "predictions must include at least one model forecast column"
+        raise ValueError(msg)
+
+    for model in models:
         ic_by_date = predictions.groupby("date").apply(
             lambda frame, col=model: _safe_corr(frame[col], frame["label"])
         )
@@ -54,7 +64,14 @@ def evaluate_predictions(
     return metrics, portfolio_returns, sector_attribution
 
 
-def _validate_inputs(cost_bps: float, quantile: float, holding_period_days: int) -> None:
+def _validate_inputs(
+    predictions: pd.DataFrame, cost_bps: float, quantile: float, holding_period_days: int
+) -> None:
+    required_columns = {"date", "asset", "sector", "label", "future_return"}
+    missing_columns = sorted(required_columns.difference(predictions.columns))
+    if missing_columns:
+        msg = f"predictions missing required columns: {', '.join(missing_columns)}"
+        raise ValueError(msg)
     if holding_period_days <= 0:
         msg = "holding_period_days must be positive"
         raise ValueError(msg)
