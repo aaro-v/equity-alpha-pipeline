@@ -98,4 +98,4 @@ def _markdown_table(frame: pd.DataFrame) -> str:
 def _format_value(value: object) -> str:
     if isinstance(value, float):
         return f"{value:.4f}"
-    return str(value)
+    return str(value).replace("\n", " ").replace("|", r"\|")
