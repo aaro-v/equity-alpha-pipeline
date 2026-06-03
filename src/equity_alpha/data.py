@@ -37,6 +37,7 @@ def generate_sample_panel(config: SampleDataConfig | None = None) -> pd.DataFram
     """
 
     config = config or SampleDataConfig()
+    _validate_sample_data_config(config)
     rng = np.random.default_rng(config.seed)
 
     dates = pd.bdate_range(config.start, periods=config.n_days, name="date")
@@ -103,3 +104,12 @@ def generate_sample_panel(config: SampleDataConfig | None = None) -> pd.DataFram
 
     panel = pd.concat(rows, ignore_index=True)
     return panel.sort_values(["date", "asset"], ignore_index=True)
+
+
+def _validate_sample_data_config(config: SampleDataConfig) -> None:
+    if config.n_assets <= 0:
+        msg = "n_assets must be positive"
+        raise ValueError(msg)
+    if config.n_days <= 0:
+        msg = "n_days must be positive"
+        raise ValueError(msg)
