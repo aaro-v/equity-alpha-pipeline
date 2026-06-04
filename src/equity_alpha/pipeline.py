@@ -7,7 +7,7 @@ import pandas as pd
 
 from equity_alpha.data import SampleDataConfig, generate_sample_panel
 from equity_alpha.features import build_research_frame
-from equity_alpha.models import ModelConfig, predict_baselines
+from equity_alpha.models import ModelConfig, predict_baselines, validate_model_config
 from equity_alpha.portfolio import evaluate_predictions
 from equity_alpha.reports import write_artifacts
 from equity_alpha.validation import WalkForwardConfig, make_walk_forward_splits
@@ -81,3 +81,4 @@ def _validate_pipeline_config(config: PipelineConfig) -> None:
     if config.cost_bps < 0:
         msg = "cost_bps must be non-negative"
         raise ValueError(msg)
+    validate_model_config(config.models)

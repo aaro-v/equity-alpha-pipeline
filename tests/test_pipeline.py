@@ -63,6 +63,10 @@ def test_pipeline_runs_and_returns_metrics() -> None:
     [
         (PipelineConfig(horizon=0), "horizon must be positive"),
         (PipelineConfig(cost_bps=-0.1), "cost_bps must be non-negative"),
+        (
+            PipelineConfig(models=ModelConfig(neural_epochs=0)),
+            "neural_epochs must be positive",
+        ),
     ],
 )
 def test_pipeline_rejects_invalid_top_level_config(

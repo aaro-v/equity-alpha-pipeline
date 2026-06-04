@@ -63,6 +63,8 @@ def test_cli_run_accepts_research_controls(tmp_path) -> None:
             "10",
             "--embargo-days",
             "3",
+            "--neural-epochs",
+            "3",
             "--no-include-neural",
         ],
     )
@@ -71,3 +73,19 @@ def test_cli_run_accepts_research_controls(tmp_path) -> None:
     assert (output_dir / "metrics.csv").exists()
     assert (output_dir / "research_report.md").exists()
     assert "cost_adjusted_sharpe" in result.stdout
+
+
+def test_cli_run_rejects_invalid_neural_epochs(tmp_path) -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "run",
+            "--output-dir",
+            str(tmp_path / "reports"),
+            "--neural-epochs",
+            "0",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "neural-epochs" in result.stdout + result.stderr

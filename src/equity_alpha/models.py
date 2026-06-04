@@ -28,6 +28,7 @@ def predict_baselines(
     """Fit deterministic baseline forecasters and return test predictions."""
 
     config = config or ModelConfig()
+    validate_model_config(config)
     x_train = train.loc[:, feature_columns].to_numpy(dtype=float)
     y_train = train["label"].to_numpy(dtype=float)
     x_test = test.loc[:, feature_columns].to_numpy(dtype=float)
@@ -45,6 +46,12 @@ def predict_baselines(
 def model_columns(predictions: pd.DataFrame) -> list[str]:
     protected = {"date", "asset", "sector", "label", "future_return", "fold"}
     return [column for column in predictions.columns if column not in protected]
+
+
+def validate_model_config(config: ModelConfig) -> None:
+    if config.neural_epochs <= 0:
+        msg = "neural_epochs must be positive"
+        raise ValueError(msg)
 
 
 def _ridge_predictions(x_train: np.ndarray, y_train: np.ndarray, x_test: np.ndarray) -> np.ndarray:

@@ -67,6 +67,9 @@ def run(
     include_neural: Annotated[
         bool, typer.Option(help="Fit the small PyTorch neural baseline.")
     ] = True,
+    neural_epochs: Annotated[
+        int, typer.Option(min=1, help="Training epochs for the neural baseline.")
+    ] = 25,
 ) -> None:
     """Run the full deterministic cross-sectional alpha research pipeline."""
 
@@ -78,7 +81,7 @@ def run(
             purge_days=purge_days,
             embargo_days=embargo_days,
         ),
-        models=ModelConfig(include_neural=include_neural),
+        models=ModelConfig(include_neural=include_neural, neural_epochs=neural_epochs),
         horizon=horizon,
         cost_bps=cost_bps,
     )
