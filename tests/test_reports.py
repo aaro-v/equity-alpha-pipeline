@@ -13,6 +13,7 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
                 "mean_ic": 0.123456,
                 "mean_rank_ic": 0.234567,
                 "portfolio_return": 0.345678,
+                "positive_return_rate": 1.0,
                 "cost_adjusted_sharpe": 1.234567,
                 "max_drawdown": -0.045678,
                 "mean_turnover": 0.56789,

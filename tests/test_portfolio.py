@@ -27,6 +27,14 @@ def test_sharpe_annualization_uses_holding_period() -> None:
     assert faster_sharpe == pytest.approx(default_sharpe * np.sqrt(21 / 5))
 
 
+def test_positive_return_rate_reports_net_return_hit_rate() -> None:
+    metrics, _, _ = evaluate_predictions(_simple_predictions(), cost_bps=0.0, quantile=0.25)
+
+    hit_rate = metrics.loc[metrics["model"] == "ridge"].iloc[0]["positive_return_rate"]
+
+    assert hit_rate == pytest.approx(0.75)
+
+
 def test_sharpe_annualization_rejects_non_positive_holding_period() -> None:
     with pytest.raises(ValueError, match="holding_period_days must be positive"):
         evaluate_predictions(_simple_predictions(), holding_period_days=0)

@@ -50,6 +50,7 @@ def evaluate_predictions(
                 "mean_ic": float(ic_by_date.mean()),
                 "mean_rank_ic": float(rank_ic_by_date.mean()),
                 "portfolio_return": float(returns.sum()),
+                "positive_return_rate": float((returns > 0).mean()),
                 "cost_adjusted_sharpe": float(sharpe),
                 "max_drawdown": float(drawdown),
                 "mean_turnover": float(portfolio["turnover"].mean()),
