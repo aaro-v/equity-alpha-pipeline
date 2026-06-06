@@ -5,6 +5,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from equity_alpha.models import model_columns
+
 
 def write_artifacts(
     output_dir: Path,
@@ -25,7 +27,7 @@ def write_artifacts(
     _plot_equity_curve(portfolio_returns, chart_path)
 
     report_path = output_dir / "research_report.md"
-    report = _render_report(metrics, sector_attribution, chart_path.name)
+    report = _render_report(metrics, sector_attribution, predictions, chart_path.name)
     report_path.write_text(report, encoding="utf-8")
     return report_path
 
@@ -44,7 +46,12 @@ def _plot_equity_curve(portfolio_returns: pd.DataFrame, path: Path) -> None:
     plt.close(fig)
 
 
-def _render_report(metrics: pd.DataFrame, sector_attribution: pd.DataFrame, chart_name: str) -> str:
+def _render_report(
+    metrics: pd.DataFrame,
+    sector_attribution: pd.DataFrame,
+    predictions: pd.DataFrame,
+    chart_name: str,
+) -> str:
     best = metrics.iloc[0]
     sector_summary = (
         sector_attribution.sort_values(["model", "rank_ic"], ascending=[True, False])
@@ -64,6 +71,10 @@ def _render_report(metrics: pd.DataFrame, sector_attribution: pd.DataFrame, char
             "",
             f"Best sample model by cost-adjusted Sharpe: **{best['model']}**.",
             "",
+            "## Validation Summary",
+            "",
+            _markdown_table(_validation_summary(predictions)),
+            "",
             "## Top Sector Rank ICs",
             "",
             _markdown_table(sector_summary),
@@ -79,6 +90,21 @@ def _render_report(metrics: pd.DataFrame, sector_attribution: pd.DataFrame, char
             "- Walk-forward splits use a purge gap before each test window and an embargo step.",
             "- Long-short returns include turnover-based transaction costs.",
             "",
+        ]
+    )
+
+
+def _validation_summary(predictions: pd.DataFrame) -> pd.DataFrame:
+    prediction_dates = pd.to_datetime(predictions["date"])
+    return pd.DataFrame(
+        [
+            {
+                "folds": int(predictions["fold"].nunique()),
+                "start_date": prediction_dates.min().date().isoformat(),
+                "end_date": prediction_dates.max().date().isoformat(),
+                "prediction_rows": len(predictions),
+                "models": ", ".join(model_columns(predictions)),
+            }
         ]
     )
 

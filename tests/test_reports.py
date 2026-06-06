@@ -50,6 +50,16 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
                 "label": 0.01,
                 "future_return": 0.01,
                 "ridge|linear": 0.2,
+                "fold": 1,
+            },
+            {
+                "date": pd.Timestamp("2024-01-03"),
+                "asset": "B",
+                "sector": "Financials",
+                "label": -0.01,
+                "future_return": -0.01,
+                "ridge|linear": -0.2,
+                "fold": 2,
             }
         ]
     )
@@ -66,5 +76,8 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     assert r"ridge\|linear" in report
     assert r"Energy\|Utilities" in report
     assert "0.1235" in report
+    assert "## Validation Summary" in report
+    assert "| folds | start_date | end_date | prediction_rows | models |" in report
+    assert "| 2 | 2024-01-02 | 2024-01-03 | 2 | ridge\\|linear |" in report
     assert (tmp_path / "metrics.csv").exists()
     assert (tmp_path / "equity_curve.png").exists()
