@@ -77,7 +77,10 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     assert r"Energy\|Utilities" in report
     assert "0.1235" in report
     assert "## Validation Summary" in report
-    assert "| folds | start_date | end_date | prediction_rows | models |" in report
-    assert "| 2 | 2024-01-02 | 2024-01-03 | 2 | ridge\\|linear |" in report
+    assert (
+        "| folds | start_date | end_date | prediction_rows | unique_assets | "
+        "avg_assets_per_date | models |"
+    ) in report
+    assert "| 2 | 2024-01-02 | 2024-01-03 | 2 | 2 | 1.0000 | ridge\\|linear |" in report
     assert (tmp_path / "metrics.csv").exists()
     assert (tmp_path / "equity_curve.png").exists()

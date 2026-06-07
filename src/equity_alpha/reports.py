@@ -96,6 +96,7 @@ def _render_report(
 
 def _validation_summary(predictions: pd.DataFrame) -> pd.DataFrame:
     prediction_dates = pd.to_datetime(predictions["date"])
+    assets_per_date = predictions.groupby("date")["asset"].nunique()
     return pd.DataFrame(
         [
             {
@@ -103,6 +104,8 @@ def _validation_summary(predictions: pd.DataFrame) -> pd.DataFrame:
                 "start_date": prediction_dates.min().date().isoformat(),
                 "end_date": prediction_dates.max().date().isoformat(),
                 "prediction_rows": len(predictions),
+                "unique_assets": int(predictions["asset"].nunique()),
+                "avg_assets_per_date": float(assets_per_date.mean()),
                 "models": ", ".join(model_columns(predictions)),
             }
         ]
