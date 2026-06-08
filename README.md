@@ -50,6 +50,15 @@ portfolios, and writes artifacts:
 - `reports/generated/equity_curve.png`
 - `reports/generated/research_report.md`
 
+## Sample Results
+
+The chart below is produced with `equity-alpha run --output-dir reports/generated`
+from deterministic synthetic data. It is useful for validating ranking,
+walk-forward portfolio formation, cost handling, and report generation; it is
+not a live-market performance claim.
+
+![Walk-forward long-short equity curve](reports/generated/equity_curve.png)
+
 For a faster smoke run without PyTorch training:
 
 ```bash
@@ -93,3 +102,18 @@ equity-alpha sample-data --output data/cache/sample_panel.parquet
 
 The generated outputs are for engineering validation only. They use synthetic
 data and should not be read as evidence of live-market profitability.
+
+## Project Layout
+
+```text
+src/equity_alpha/
+  data/          Deterministic sample panel generation
+  research/      Factor construction and model baselines
+  validation/    Purged walk-forward split logic
+  portfolio/     Long-short portfolio construction and evaluation
+  reporting/     CSV, Markdown, Parquet, and PNG artifact writers
+  workflow/      End-to-end pipeline orchestration
+  cli.py         Typer command line interface
+tests/           Unit and CLI coverage for each layer
+reports/         Reproducible generated research artifacts
+```

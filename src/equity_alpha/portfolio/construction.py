@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from equity_alpha.models import model_columns
+from equity_alpha.research.models import model_columns
 
 
 def evaluate_predictions(

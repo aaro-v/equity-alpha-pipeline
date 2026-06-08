@@ -6,9 +6,9 @@ from typing import Annotated
 import typer
 
 from equity_alpha.data import SampleDataConfig, generate_sample_panel
-from equity_alpha.models import ModelConfig
-from equity_alpha.pipeline import PipelineConfig, run_research_pipeline
+from equity_alpha.research.models import ModelConfig
 from equity_alpha.validation import WalkForwardConfig
+from equity_alpha.workflow.pipeline import PipelineConfig, run_research_pipeline
 
 app = typer.Typer(no_args_is_help=True)
 
