@@ -27,7 +27,9 @@ def write_artifacts(
     _plot_equity_curve(portfolio_returns, chart_path)
 
     report_path = output_dir / "research_report.md"
-    report = _render_report(metrics, sector_attribution, predictions, chart_path.name)
+    report = _render_report(
+        metrics, portfolio_returns, sector_attribution, predictions, chart_path.name
+    )
     report_path.write_text(report, encoding="utf-8")
     return report_path
 
@@ -48,6 +50,7 @@ def _plot_equity_curve(portfolio_returns: pd.DataFrame, path: Path) -> None:
 
 def _render_report(
     metrics: pd.DataFrame,
+    portfolio_returns: pd.DataFrame,
     sector_attribution: pd.DataFrame,
     predictions: pd.DataFrame,
     chart_name: str,
@@ -75,6 +78,10 @@ def _render_report(
             "",
             _markdown_table(_validation_summary(predictions)),
             "",
+            "## Portfolio Diagnostics",
+            "",
+            _markdown_table(_portfolio_summary(portfolio_returns)),
+            "",
             "## Top Sector Rank ICs",
             "",
             _markdown_table(sector_summary),
@@ -91,6 +98,22 @@ def _render_report(
             "- Long-short returns include turnover-based transaction costs.",
             "",
         ]
+    )
+
+
+def _portfolio_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
+    return (
+        portfolio_returns.assign(
+            cost_drag=portfolio_returns["gross_return"] - portfolio_returns["net_return"]
+        )
+        .groupby("model", as_index=False)
+        .agg(
+            periods=("date", "nunique"),
+            avg_gross_return=("gross_return", "mean"),
+            avg_net_return=("net_return", "mean"),
+            avg_turnover=("turnover", "mean"),
+            avg_cost_drag=("cost_drag", "mean"),
+        )
     )
 
 

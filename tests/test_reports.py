@@ -82,5 +82,11 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
         "avg_assets_per_date | models |"
     ) in report
     assert "| 2 | 2024-01-02 | 2024-01-03 | 2 | 2 | 1.0000 | ridge\\|linear |" in report
+    assert "## Portfolio Diagnostics" in report
+    assert (
+        "| model | periods | avg_gross_return | avg_net_return | avg_turnover | "
+        "avg_cost_drag |"
+    ) in report
+    assert "| ridge\\|linear | 2 | 0.0150 | 0.0142 | 0.7500 | 0.0008 |" in report
     assert (tmp_path / "metrics.csv").exists()
     assert (tmp_path / "equity_curve.png").exists()
