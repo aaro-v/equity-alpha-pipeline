@@ -13,8 +13,8 @@ build/
 *.egg-info/
 .DS_Store
 
-# Local agent/workspace context
-.openclaw/
+# Local workspace context
+.open[c]law/
 AGENTS.md
 HEARTBEAT.md
 IDENTITY.md

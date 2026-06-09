@@ -9,6 +9,16 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     metrics = pd.DataFrame(
         [
             {
+                "model": "tree",
+                "mean_ic": 0.223456,
+                "mean_rank_ic": 0.334567,
+                "portfolio_return": 0.445678,
+                "positive_return_rate": 1.0,
+                "cost_adjusted_sharpe": 2.734567,
+                "max_drawdown": -0.025678,
+                "mean_turnover": 0.66789,
+            },
+            {
                 "model": "ridge|linear",
                 "mean_ic": 0.123456,
                 "mean_rank_ic": 0.234567,
@@ -76,6 +86,13 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     assert r"ridge\|linear" in report
     assert r"Energy\|Utilities" in report
     assert "0.1235" in report
+    assert "## Benchmark Comparison" in report
+    assert (
+        "| model | benchmark | rank_ic_delta | sharpe_delta | "
+        "portfolio_return_delta |"
+    ) in report
+    assert "| tree | tree | 0.0000 | 0.0000 | 0.0000 |" in report
+    assert "| ridge\\|linear | tree | -0.1000 | -1.5000 | -0.1000 |" in report
     assert "## Validation Summary" in report
     assert (
         "| folds | start_date | end_date | prediction_rows | unique_assets | "

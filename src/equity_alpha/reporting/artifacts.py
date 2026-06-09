@@ -74,6 +74,10 @@ def _render_report(
             "",
             f"Best sample model by cost-adjusted Sharpe: **{best['model']}**.",
             "",
+            "## Benchmark Comparison",
+            "",
+            _markdown_table(_benchmark_comparison(metrics)),
+            "",
             "## Validation Summary",
             "",
             _markdown_table(_validation_summary(predictions)),
@@ -98,6 +102,29 @@ def _render_report(
             "- Long-short returns include turnover-based transaction costs.",
             "",
         ]
+    )
+
+
+def _benchmark_comparison(metrics: pd.DataFrame) -> pd.DataFrame:
+    benchmark_model = "ridge" if "ridge" in set(metrics["model"]) else metrics.iloc[0]["model"]
+    benchmark = metrics.loc[metrics["model"] == benchmark_model].iloc[0]
+    return (
+        metrics.assign(
+            benchmark=benchmark_model,
+            rank_ic_delta=metrics["mean_rank_ic"] - benchmark["mean_rank_ic"],
+            sharpe_delta=metrics["cost_adjusted_sharpe"] - benchmark["cost_adjusted_sharpe"],
+            portfolio_return_delta=metrics["portfolio_return"] - benchmark["portfolio_return"],
+        )[
+            [
+                "model",
+                "benchmark",
+                "rank_ic_delta",
+                "sharpe_delta",
+                "portfolio_return_delta",
+            ]
+        ]
+        .sort_values("sharpe_delta", ascending=False)
+        .reset_index(drop=True)
     )
 
 
