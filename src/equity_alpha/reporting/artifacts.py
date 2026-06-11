@@ -82,6 +82,10 @@ def _render_report(
             "",
             _markdown_table(_validation_summary(predictions)),
             "",
+            "## Fold Stability",
+            "",
+            _markdown_table(_fold_summary(predictions, portfolio_returns)),
+            "",
             "## Portfolio Diagnostics",
             "",
             _markdown_table(_portfolio_summary(portfolio_returns)),
@@ -162,6 +166,29 @@ def _validation_summary(predictions: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def _fold_summary(predictions: pd.DataFrame, portfolio_returns: pd.DataFrame) -> pd.DataFrame:
+    fold_dates = predictions.loc[:, ["fold", "date"]].drop_duplicates()
+    returns_by_fold = portfolio_returns.merge(
+        fold_dates, on="date", how="left", validate="many_to_one"
+    )
+    rows: list[dict[str, float | int | str]] = []
+    for model in model_columns(predictions):
+        model_returns = returns_by_fold.loc[returns_by_fold["model"] == model]
+        for fold, frame in predictions.groupby("fold"):
+            fold_returns = model_returns.loc[model_returns["fold"] == fold, "net_return"]
+            rows.append(
+                {
+                    "model": model,
+                    "fold": int(fold),
+                    "start_date": pd.to_datetime(frame["date"]).min().date().isoformat(),
+                    "end_date": pd.to_datetime(frame["date"]).max().date().isoformat(),
+                    "rank_ic": _safe_rank_ic(frame, model),
+                    "net_return": float(fold_returns.sum()),
+                }
+            )
+    return pd.DataFrame(rows).sort_values(["model", "fold"]).reset_index(drop=True)
+
+
 def _markdown_table(frame: pd.DataFrame) -> str:
     columns = list(frame.columns)
     rows = [
@@ -178,3 +205,16 @@ def _format_value(value: object) -> str:
     if isinstance(value, float):
         return f"{value:.4f}"
     return str(value).replace("\n", " ").replace("|", r"\|")
+
+
+def _safe_rank_ic(frame: pd.DataFrame, model: str) -> float:
+    rank_ic = frame.groupby("date").apply(
+        lambda date_frame: _safe_corr(date_frame[model].rank(), date_frame["label"].rank())
+    )
+    return float(rank_ic.mean())
+
+
+def _safe_corr(left: pd.Series, right: pd.Series) -> float:
+    if len(left) < 3 or left.nunique() < 2 or right.nunique() < 2:
+        return float("nan")
+    return float(left.corr(right))
