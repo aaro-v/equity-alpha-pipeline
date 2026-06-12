@@ -56,6 +56,7 @@ def _render_report(
     chart_name: str,
 ) -> str:
     best = metrics.iloc[0]
+    fold_summary = _fold_summary(predictions, portfolio_returns)
     sector_summary = (
         sector_attribution.sort_values(["model", "rank_ic"], ascending=[True, False])
         .groupby("model")
@@ -84,7 +85,11 @@ def _render_report(
             "",
             "## Fold Stability",
             "",
-            _markdown_table(_fold_summary(predictions, portfolio_returns)),
+            _markdown_table(fold_summary),
+            "",
+            "## Fold Robustness",
+            "",
+            _markdown_table(_fold_robustness_summary(fold_summary)),
             "",
             "## Portfolio Diagnostics",
             "",
@@ -187,6 +192,22 @@ def _fold_summary(predictions: pd.DataFrame, portfolio_returns: pd.DataFrame) ->
                 }
             )
     return pd.DataFrame(rows).sort_values(["model", "fold"]).reset_index(drop=True)
+
+
+def _fold_robustness_summary(fold_summary: pd.DataFrame) -> pd.DataFrame:
+    return (
+        fold_summary.groupby("model", as_index=False)
+        .agg(
+            folds=("fold", "nunique"),
+            avg_fold_rank_ic=("rank_ic", "mean"),
+            rank_ic_std=("rank_ic", "std"),
+            positive_fold_rate=("net_return", lambda values: float((values > 0).mean())),
+            worst_fold_net_return=("net_return", "min"),
+            best_fold_net_return=("net_return", "max"),
+        )
+        .sort_values(["positive_fold_rate", "avg_fold_rank_ic"], ascending=False)
+        .reset_index(drop=True)
+    )
 
 
 def _markdown_table(frame: pd.DataFrame) -> str:

@@ -103,6 +103,12 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     assert "| model | fold | start_date | end_date | rank_ic | net_return |" in report
     assert "| ridge\\|linear | 1 | 2024-01-02 | 2024-01-02 | nan | 0.0090 |" in report
     assert "| ridge\\|linear | 2 | 2024-01-03 | 2024-01-03 | nan | 0.0195 |" in report
+    assert "## Fold Robustness" in report
+    assert (
+        "| model | folds | avg_fold_rank_ic | rank_ic_std | positive_fold_rate | "
+        "worst_fold_net_return | best_fold_net_return |"
+    ) in report
+    assert "| ridge\\|linear | 2 | nan | nan | 1.0000 | 0.0090 | 0.0195 |" in report
     assert "## Portfolio Diagnostics" in report
     assert (
         "| model | periods | avg_gross_return | avg_net_return | avg_turnover | "
