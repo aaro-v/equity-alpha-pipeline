@@ -46,6 +46,13 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
                 "net_return": 0.0195,
                 "model": "ridge|linear",
             },
+            {
+                "date": pd.Timestamp("2024-01-04"),
+                "gross_return": -0.03,
+                "turnover": 0.5,
+                "net_return": -0.0305,
+                "model": "ridge|linear",
+            },
         ]
     )
     sector_attribution = pd.DataFrame(
@@ -114,6 +121,12 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
         "| model | periods | avg_gross_return | avg_net_return | avg_turnover | "
         "avg_cost_drag |"
     ) in report
-    assert "| ridge\\|linear | 2 | 0.0150 | 0.0142 | 0.7500 | 0.0008 |" in report
+    assert "| ridge\\|linear | 3 | 0.0000 | -0.0007 | 0.6667 | 0.0007 |" in report
+    assert "## Tail Risk Diagnostics" in report
+    assert (
+        "| model | worst_period_net_return | net_return_volatility | "
+        "positive_period_rate | max_drawdown | max_drawdown_periods |"
+    ) in report
+    assert "| ridge\\|linear | -0.0305 | 0.0215 | 0.6667 | -0.0305 | 1 |" in report
     assert (tmp_path / "metrics.csv").exists()
     assert (tmp_path / "equity_curve.png").exists()

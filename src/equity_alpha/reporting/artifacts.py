@@ -95,6 +95,10 @@ def _render_report(
             "",
             _markdown_table(_portfolio_summary(portfolio_returns)),
             "",
+            "## Tail Risk Diagnostics",
+            "",
+            _markdown_table(_tail_risk_summary(portfolio_returns)),
+            "",
             "## Top Sector Rank ICs",
             "",
             _markdown_table(sector_summary),
@@ -151,6 +155,26 @@ def _portfolio_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
             avg_cost_drag=("cost_drag", "mean"),
         )
     )
+
+
+def _tail_risk_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, float | int | str]] = []
+    for model, frame in portfolio_returns.sort_values("date").groupby("model"):
+        returns = frame["net_return"]
+        curve = (1.0 + returns).cumprod()
+        drawdown = curve / curve.cummax() - 1.0
+        in_drawdown = drawdown < 0
+        rows.append(
+            {
+                "model": model,
+                "worst_period_net_return": float(returns.min()),
+                "net_return_volatility": float(returns.std(ddof=0)),
+                "positive_period_rate": float((returns > 0).mean()),
+                "max_drawdown": float(drawdown.min()),
+                "max_drawdown_periods": _longest_true_run(in_drawdown),
+            }
+        )
+    return pd.DataFrame(rows).sort_values("max_drawdown").reset_index(drop=True)
 
 
 def _validation_summary(predictions: pd.DataFrame) -> pd.DataFrame:
@@ -239,3 +263,15 @@ def _safe_corr(left: pd.Series, right: pd.Series) -> float:
     if len(left) < 3 or left.nunique() < 2 or right.nunique() < 2:
         return float("nan")
     return float(left.corr(right))
+
+
+def _longest_true_run(values: pd.Series) -> int:
+    longest = 0
+    current = 0
+    for value in values:
+        if value:
+            current += 1
+            longest = max(longest, current)
+        else:
+            current = 0
+    return longest
