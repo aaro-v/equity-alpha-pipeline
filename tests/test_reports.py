@@ -75,7 +75,7 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
                 "sector": "Financials",
                 "label": -0.01,
                 "future_return": -0.01,
-                "ridge|linear": -0.2,
+                "ridge|linear": None,
                 "fold": 2,
             }
         ]
@@ -106,6 +106,12 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
         "avg_assets_per_date | models |"
     ) in report
     assert "| 2 | 2024-01-02 | 2024-01-03 | 2 | 2 | 1.0000 | ridge\\|linear |" in report
+    assert "## Prediction Coverage" in report
+    assert (
+        "| model | prediction_rows | dates | min_assets_per_date | avg_assets_per_date | "
+        "missing_score_rate | unique_score_rate |"
+    ) in report
+    assert "| ridge\\|linear | 2 | 2 | 1 | 1.0000 | 0.5000 | 0.5000 |" in report
     assert "## Fold Stability" in report
     assert "| model | fold | start_date | end_date | rank_ic | net_return |" in report
     assert "| ridge\\|linear | 1 | 2024-01-02 | 2024-01-02 | nan | 0.0090 |" in report

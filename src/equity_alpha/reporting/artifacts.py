@@ -83,6 +83,10 @@ def _render_report(
             "",
             _markdown_table(_validation_summary(predictions)),
             "",
+            "## Prediction Coverage",
+            "",
+            _markdown_table(_prediction_coverage_summary(predictions)),
+            "",
             "## Fold Stability",
             "",
             _markdown_table(fold_summary),
@@ -192,6 +196,32 @@ def _validation_summary(predictions: pd.DataFrame) -> pd.DataFrame:
                 "models": ", ".join(model_columns(predictions)),
             }
         ]
+    )
+
+
+def _prediction_coverage_summary(predictions: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, float | int | str]] = []
+    assets_per_date = predictions.groupby("date")["asset"].nunique()
+    total_rows = len(predictions)
+
+    for model in model_columns(predictions):
+        scores = predictions[model]
+        rows.append(
+            {
+                "model": model,
+                "prediction_rows": total_rows,
+                "dates": int(predictions["date"].nunique()),
+                "min_assets_per_date": int(assets_per_date.min()),
+                "avg_assets_per_date": float(assets_per_date.mean()),
+                "missing_score_rate": float(scores.isna().mean()),
+                "unique_score_rate": float(scores.nunique(dropna=True) / total_rows),
+            }
+        )
+
+    return (
+        pd.DataFrame(rows)
+        .sort_values(["missing_score_rate", "unique_score_rate"], ascending=[True, False])
+        .reset_index(drop=True)
     )
 
 
