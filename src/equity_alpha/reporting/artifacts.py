@@ -103,6 +103,10 @@ def _render_report(
             "",
             _markdown_table(_tail_risk_summary(portfolio_returns)),
             "",
+            "## Book Exposure Diagnostics",
+            "",
+            _markdown_table(_book_exposure_summary(predictions)),
+            "",
             "## Top Sector Rank ICs",
             "",
             _markdown_table(sector_summary),
@@ -179,6 +183,34 @@ def _tail_risk_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows).sort_values("max_drawdown").reset_index(drop=True)
+
+
+def _book_exposure_summary(predictions: pd.DataFrame, quantile: float = 0.2) -> pd.DataFrame:
+    rows: list[dict[str, float | int | str]] = []
+    for model in model_columns(predictions):
+        for side, selector in [("long", "nlargest"), ("short", "nsmallest")]:
+            selected = []
+            for _, frame in predictions.groupby("date"):
+                n_names = max(1, int(len(frame) * quantile))
+                selected.append(getattr(frame, selector)(n_names, model))
+            book = pd.concat(selected, ignore_index=True)
+            sector_weights = book["sector"].value_counts(normalize=True)
+            rows.append(
+                {
+                    "model": model,
+                    "side": side,
+                    "avg_names_per_date": float(len(book) / predictions["date"].nunique()),
+                    "top_sector": str(sector_weights.index[0]),
+                    "top_sector_weight": float(sector_weights.iloc[0]),
+                    "avg_label": float(book["label"].mean()),
+                    "avg_future_return": float(book["future_return"].mean()),
+                }
+            )
+    return (
+        pd.DataFrame(rows)
+        .sort_values(["model", "side"], ascending=[True, False])
+        .reset_index(drop=True)
+    )
 
 
 def _validation_summary(predictions: pd.DataFrame) -> pd.DataFrame:

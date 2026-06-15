@@ -134,5 +134,14 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
         "positive_period_rate | max_drawdown | max_drawdown_periods |"
     ) in report
     assert "| ridge\\|linear | -0.0305 | 0.0215 | 0.6667 | -0.0305 | 1 |" in report
+    assert "## Book Exposure Diagnostics" in report
+    assert (
+        "| model | side | avg_names_per_date | top_sector | top_sector_weight | "
+        "avg_label | avg_future_return |"
+    ) in report
+    assert (
+        "| ridge\\|linear | short | 1.0000 | Energy\\|Utilities | "
+        "0.5000 | 0.0000 | 0.0000 |"
+    ) in report
     assert (tmp_path / "metrics.csv").exists()
     assert (tmp_path / "equity_curve.png").exists()
