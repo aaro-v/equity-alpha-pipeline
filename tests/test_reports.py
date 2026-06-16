@@ -112,6 +112,17 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
         "missing_score_rate | unique_score_rate |"
     ) in report
     assert "| ridge\\|linear | 2 | 2 | 1 | 1.0000 | 0.5000 | 0.5000 |" in report
+    assert "## Fold Breadth" in report
+    assert (
+        "| fold | start_date | end_date | dates | prediction_rows | unique_assets | "
+        "min_assets_per_date | avg_assets_per_date | model_count |"
+    ) in report
+    assert (
+        "| 1 | 2024-01-02 | 2024-01-02 | 1 | 1 | 1 | 1 | 1.0000 | 1 |"
+    ) in report
+    assert (
+        "| 2 | 2024-01-03 | 2024-01-03 | 1 | 1 | 1 | 1 | 1.0000 | 1 |"
+    ) in report
     assert "## Fold Stability" in report
     assert "| model | fold | start_date | end_date | rank_ic | net_return |" in report
     assert "| ridge\\|linear | 1 | 2024-01-02 | 2024-01-02 | nan | 0.0090 |" in report

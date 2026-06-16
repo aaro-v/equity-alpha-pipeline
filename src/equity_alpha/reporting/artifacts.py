@@ -87,6 +87,10 @@ def _render_report(
             "",
             _markdown_table(_prediction_coverage_summary(predictions)),
             "",
+            "## Fold Breadth",
+            "",
+            _markdown_table(_fold_breadth_summary(predictions)),
+            "",
             "## Fold Stability",
             "",
             _markdown_table(fold_summary),
@@ -255,6 +259,28 @@ def _prediction_coverage_summary(predictions: pd.DataFrame) -> pd.DataFrame:
         .sort_values(["missing_score_rate", "unique_score_rate"], ascending=[True, False])
         .reset_index(drop=True)
     )
+
+
+def _fold_breadth_summary(predictions: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, float | int | str]] = []
+    model_count = len(model_columns(predictions))
+    for fold, frame in predictions.groupby("fold"):
+        dates = pd.to_datetime(frame["date"])
+        assets_per_date = frame.groupby("date")["asset"].nunique()
+        rows.append(
+            {
+                "fold": int(fold),
+                "start_date": dates.min().date().isoformat(),
+                "end_date": dates.max().date().isoformat(),
+                "dates": int(frame["date"].nunique()),
+                "prediction_rows": len(frame),
+                "unique_assets": int(frame["asset"].nunique()),
+                "min_assets_per_date": int(assets_per_date.min()),
+                "avg_assets_per_date": float(assets_per_date.mean()),
+                "model_count": model_count,
+            }
+        )
+    return pd.DataFrame(rows).sort_values("fold").reset_index(drop=True)
 
 
 def _fold_summary(predictions: pd.DataFrame, portfolio_returns: pd.DataFrame) -> pd.DataFrame:
