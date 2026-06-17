@@ -103,6 +103,10 @@ def _render_report(
             "",
             _markdown_table(_portfolio_summary(portfolio_returns)),
             "",
+            "## Return Consistency",
+            "",
+            _markdown_table(_return_consistency_summary(portfolio_returns)),
+            "",
             "## Tail Risk Diagnostics",
             "",
             _markdown_table(_tail_risk_summary(portfolio_returns)),
@@ -166,6 +170,29 @@ def _portfolio_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
             avg_turnover=("turnover", "mean"),
             avg_cost_drag=("cost_drag", "mean"),
         )
+    )
+
+
+def _return_consistency_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, float | int | str]] = []
+    for model, frame in portfolio_returns.sort_values("date").groupby("model"):
+        returns = frame["net_return"]
+        curve = (1.0 + returns).cumprod()
+        rows.append(
+            {
+                "model": model,
+                "periods": int(frame["date"].nunique()),
+                "mean_net_return": float(returns.mean()),
+                "median_net_return": float(returns.median()),
+                "cumulative_return": float(curve.iloc[-1] - 1.0),
+                "return_skew": float(returns.skew()),
+                "positive_period_rate": float((returns > 0).mean()),
+            }
+        )
+    return (
+        pd.DataFrame(rows)
+        .sort_values(["cumulative_return", "mean_net_return"], ascending=False)
+        .reset_index(drop=True)
     )
 
 

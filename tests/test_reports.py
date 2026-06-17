@@ -139,6 +139,15 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
         "avg_cost_drag |"
     ) in report
     assert "| ridge\\|linear | 3 | 0.0000 | -0.0007 | 0.6667 | 0.0007 |" in report
+    assert "## Return Consistency" in report
+    assert (
+        "| model | periods | mean_net_return | median_net_return | cumulative_return | "
+        "return_skew | positive_period_rate |"
+    ) in report
+    assert (
+        "| ridge\\|linear | 3 | -0.0007 | 0.0090 | -0.0027 | "
+        "-1.4281 | 0.6667 |"
+    ) in report
     assert "## Tail Risk Diagnostics" in report
     assert (
         "| model | worst_period_net_return | net_return_volatility | "
