@@ -5,6 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from equity_alpha.portfolio.metrics import drawdown_series
 from equity_alpha.research.models import model_columns
 
 
@@ -200,8 +201,7 @@ def _tail_risk_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict[str, float | int | str]] = []
     for model, frame in portfolio_returns.sort_values("date").groupby("model"):
         returns = frame["net_return"]
-        curve = (1.0 + returns).cumprod()
-        drawdown = curve / curve.cummax() - 1.0
+        drawdown = drawdown_series(returns)
         in_drawdown = drawdown < 0
         rows.append(
             {

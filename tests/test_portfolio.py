@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from equity_alpha.portfolio import evaluate_predictions
+from equity_alpha.portfolio import drawdown_series, evaluate_predictions, max_drawdown
 
 
 def test_sharpe_annualization_uses_holding_period() -> None:
@@ -33,6 +33,19 @@ def test_positive_return_rate_reports_net_return_hit_rate() -> None:
     hit_rate = metrics.loc[metrics["model"] == "ridge"].iloc[0]["positive_return_rate"]
 
     assert hit_rate == pytest.approx(0.75)
+
+
+def test_drawdown_includes_loss_from_initial_capital() -> None:
+    returns = pd.Series([-0.10, 0.05, 0.10])
+
+    drawdowns = drawdown_series(returns)
+
+    assert drawdowns.tolist() == pytest.approx([-0.10, -0.055, 0.0])
+    assert max_drawdown(returns) == pytest.approx(-0.10)
+
+
+def test_max_drawdown_handles_empty_returns() -> None:
+    assert max_drawdown(pd.Series(dtype=float)) == 0.0
 
 
 def test_sharpe_annualization_rejects_non_positive_holding_period() -> None:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from equity_alpha.portfolio.metrics import max_drawdown
 from equity_alpha.research.models import model_columns
 
 
@@ -42,7 +43,7 @@ def evaluate_predictions(
         annualizer = np.sqrt(252 / holding_period_days)
         return_std = returns.std(ddof=0)
         sharpe = 0.0 if return_std == 0 else annualizer * returns.mean() / return_std
-        drawdown = _max_drawdown(returns)
+        drawdown = max_drawdown(returns)
 
         metric_rows.append(
             {
@@ -118,12 +119,6 @@ def _portfolio_returns(
         previous_weights = weights
 
     return pd.DataFrame(rows)
-
-
-def _max_drawdown(returns: pd.Series) -> float:
-    curve = (1.0 + returns).cumprod()
-    drawdown = curve / curve.cummax() - 1.0
-    return float(drawdown.min())
 
 
 def _sector_attribution(predictions: pd.DataFrame, model: str) -> list[dict[str, float | str]]:
