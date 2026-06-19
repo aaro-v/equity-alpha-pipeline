@@ -1,8 +1,75 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
+from equity_alpha.reporting.artifacts import _signal_spread_summary
 from equity_alpha.reports import write_artifacts
+
+
+def test_signal_spread_summary_compares_top_and_bottom_scores() -> None:
+    predictions = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp("2024-01-02"),
+                "asset": "A",
+                "sector": "Energy",
+                "label": 0.04,
+                "future_return": 0.04,
+                "ridge": 0.9,
+            },
+            {
+                "date": pd.Timestamp("2024-01-02"),
+                "asset": "B",
+                "sector": "Technology",
+                "label": 0.01,
+                "future_return": 0.01,
+                "ridge": 0.1,
+            },
+            {
+                "date": pd.Timestamp("2024-01-02"),
+                "asset": "C",
+                "sector": "Financials",
+                "label": -0.01,
+                "future_return": -0.01,
+                "ridge": -0.8,
+            },
+            {
+                "date": pd.Timestamp("2024-01-03"),
+                "asset": "A",
+                "sector": "Energy",
+                "label": 0.03,
+                "future_return": 0.03,
+                "ridge": 0.7,
+            },
+            {
+                "date": pd.Timestamp("2024-01-03"),
+                "asset": "B",
+                "sector": "Technology",
+                "label": 0.00,
+                "future_return": 0.00,
+                "ridge": 0.2,
+            },
+            {
+                "date": pd.Timestamp("2024-01-03"),
+                "asset": "C",
+                "sector": "Financials",
+                "label": -0.02,
+                "future_return": -0.02,
+                "ridge": -0.6,
+            },
+        ]
+    )
+
+    summary = _signal_spread_summary(predictions)
+
+    row = summary.iloc[0]
+    assert row["model"] == "ridge"
+    assert row["dates"] == 2
+    assert row["long_avg_label"] == pytest.approx(0.035)
+    assert row["short_avg_label"] == pytest.approx(-0.015)
+    assert row["label_spread"] == pytest.approx(0.05)
+    assert row["future_return_spread"] == pytest.approx(0.05)
 
 
 def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
@@ -112,6 +179,14 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
         "missing_score_rate | unique_score_rate |"
     ) in report
     assert "| ridge\\|linear | 2 | 2 | 1 | 1.0000 | 0.5000 | 0.5000 |" in report
+    assert "## Signal Spread Diagnostics" in report
+    assert (
+        "| model | dates | long_avg_label | short_avg_label | label_spread | "
+        "long_avg_future_return | short_avg_future_return | future_return_spread |"
+    ) in report
+    assert (
+        "| ridge\\|linear | 0 | nan | nan | nan | nan | nan | nan |"
+    ) in report
     assert "## Fold Breadth" in report
     assert (
         "| fold | start_date | end_date | dates | prediction_rows | unique_assets | "

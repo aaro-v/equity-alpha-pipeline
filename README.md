@@ -97,8 +97,8 @@ equity-alpha sample-data --output data/cache/sample_panel.parquet
 - Ridge, histogram gradient boosting, and small PyTorch neural-network
   forecasters.
 - IC, rank IC, turnover, cost-adjusted Sharpe, drawdown, sector attribution,
-  positive-return rate, long-short portfolio returns, and generated
-  Markdown/CSV/PNG artifacts.
+  signal spread diagnostics, positive-return rate, long-short portfolio
+  returns, and generated Markdown/CSV/PNG artifacts.
 
 The generated outputs are for engineering validation only. They use synthetic
 data and should not be read as evidence of live-market profitability.

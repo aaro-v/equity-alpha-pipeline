@@ -88,6 +88,10 @@ def _render_report(
             "",
             _markdown_table(_prediction_coverage_summary(predictions)),
             "",
+            "## Signal Spread Diagnostics",
+            "",
+            _markdown_table(_signal_spread_summary(predictions)),
+            "",
             "## Fold Breadth",
             "",
             _markdown_table(_fold_breadth_summary(predictions)),
@@ -284,6 +288,70 @@ def _prediction_coverage_summary(predictions: pd.DataFrame) -> pd.DataFrame:
     return (
         pd.DataFrame(rows)
         .sort_values(["missing_score_rate", "unique_score_rate"], ascending=[True, False])
+        .reset_index(drop=True)
+    )
+
+
+def _signal_spread_summary(predictions: pd.DataFrame, quantile: float = 0.2) -> pd.DataFrame:
+    rows: list[dict[str, float | int | str]] = []
+    for model in model_columns(predictions):
+        spreads = []
+        for date, frame in predictions.groupby("date"):
+            valid = frame.dropna(subset=[model])
+            if len(valid) < 2:
+                continue
+            n_names = max(1, int(len(valid) * quantile))
+            longs = valid.nlargest(n_names, model)
+            shorts = valid.nsmallest(n_names, model)
+            spreads.append(
+                {
+                    "date": date,
+                    "long_label": float(longs["label"].mean()),
+                    "short_label": float(shorts["label"].mean()),
+                    "long_future_return": float(longs["future_return"].mean()),
+                    "short_future_return": float(shorts["future_return"].mean()),
+                }
+            )
+
+        spread_frame = pd.DataFrame(spreads)
+        if spread_frame.empty:
+            rows.append(
+                {
+                    "model": model,
+                    "dates": 0,
+                    "long_avg_label": float("nan"),
+                    "short_avg_label": float("nan"),
+                    "label_spread": float("nan"),
+                    "long_avg_future_return": float("nan"),
+                    "short_avg_future_return": float("nan"),
+                    "future_return_spread": float("nan"),
+                }
+            )
+            continue
+
+        rows.append(
+            {
+                "model": model,
+                "dates": int(spread_frame["date"].nunique()),
+                "long_avg_label": float(spread_frame["long_label"].mean()),
+                "short_avg_label": float(spread_frame["short_label"].mean()),
+                "label_spread": float(
+                    (spread_frame["long_label"] - spread_frame["short_label"]).mean()
+                ),
+                "long_avg_future_return": float(spread_frame["long_future_return"].mean()),
+                "short_avg_future_return": float(spread_frame["short_future_return"].mean()),
+                "future_return_spread": float(
+                    (
+                        spread_frame["long_future_return"]
+                        - spread_frame["short_future_return"]
+                    ).mean()
+                ),
+            }
+        )
+
+    return (
+        pd.DataFrame(rows)
+        .sort_values(["future_return_spread", "label_spread"], ascending=False)
         .reset_index(drop=True)
     )
 
