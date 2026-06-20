@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -32,7 +34,52 @@ def write_artifacts(
         metrics, portfolio_returns, sector_attribution, predictions, chart_path.name
     )
     report_path.write_text(report, encoding="utf-8")
+    _write_manifest(
+        output_dir / "manifest.json",
+        artifacts=[
+            ("metrics.csv", metrics),
+            ("portfolio_returns.csv", portfolio_returns),
+            ("sector_attribution.csv", sector_attribution),
+            ("predictions.parquet", predictions),
+            ("equity_curve.png", None),
+            ("research_report.md", None),
+        ],
+    )
     return report_path
+
+
+def _write_manifest(
+    path: Path, artifacts: list[tuple[str, pd.DataFrame | None]]
+) -> None:
+    manifest = {
+        "artifact_format": 1,
+        "artifacts": [
+            {
+                "path": artifact_path.name,
+                "bytes": artifact_path.stat().st_size,
+                "sha256": _sha256_file(artifact_path),
+                **(
+                    {
+                        "rows": len(frame),
+                        "columns": list(frame.columns),
+                    }
+                    if frame is not None
+                    else {}
+                ),
+            }
+            for name, frame in artifacts
+            if (artifact_path := path.parent / name).exists()
+        ],
+    }
+    path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _plot_equity_curve(portfolio_returns: pd.DataFrame, path: Path) -> None:

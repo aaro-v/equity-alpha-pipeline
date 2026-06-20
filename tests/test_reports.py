@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 import pytest
 
@@ -240,3 +242,18 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     ) in report
     assert (tmp_path / "metrics.csv").exists()
     assert (tmp_path / "equity_curve.png").exists()
+    manifest = json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["artifact_format"] == 1
+    artifacts = {artifact["path"]: artifact for artifact in manifest["artifacts"]}
+    assert set(artifacts) == {
+        "metrics.csv",
+        "portfolio_returns.csv",
+        "sector_attribution.csv",
+        "predictions.parquet",
+        "equity_curve.png",
+        "research_report.md",
+    }
+    assert artifacts["metrics.csv"]["rows"] == 2
+    assert artifacts["metrics.csv"]["columns"] == list(metrics.columns)
+    assert artifacts["metrics.csv"]["bytes"] == (tmp_path / "metrics.csv").stat().st_size
+    assert len(artifacts["metrics.csv"]["sha256"]) == 64

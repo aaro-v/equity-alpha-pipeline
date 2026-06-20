@@ -49,6 +49,7 @@ portfolios, and writes artifacts:
 - `reports/generated/predictions.parquet`
 - `reports/generated/equity_curve.png`
 - `reports/generated/research_report.md`
+- `reports/generated/manifest.json`
 
 ## Sample Results
 
@@ -98,7 +99,7 @@ equity-alpha sample-data --output data/cache/sample_panel.parquet
   forecasters.
 - IC, rank IC, turnover, cost-adjusted Sharpe, drawdown, sector attribution,
   signal spread diagnostics, positive-return rate, long-short portfolio
-  returns, and generated Markdown/CSV/PNG artifacts.
+  returns, and generated Markdown/CSV/PNG artifacts with a checksum manifest.
 
 The generated outputs are for engineering validation only. They use synthetic
 data and should not be read as evidence of live-market profitability.
