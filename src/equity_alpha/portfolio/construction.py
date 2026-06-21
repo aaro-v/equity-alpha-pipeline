@@ -30,6 +30,7 @@ def evaluate_predictions(
     if not models:
         msg = "predictions must include at least one model forecast column"
         raise ValueError(msg)
+    _validate_model_scores(predictions, models)
 
     for model in models:
         ic_by_date = predictions.groupby("date").apply(
@@ -74,6 +75,15 @@ def _validate_inputs(
     if missing_columns:
         msg = f"predictions missing required columns: {', '.join(missing_columns)}"
         raise ValueError(msg)
+    missing_values = sorted(
+        column for column in required_columns if predictions[column].isna().any()
+    )
+    if missing_values:
+        msg = f"predictions contain missing required values: {', '.join(missing_values)}"
+        raise ValueError(msg)
+    if predictions.duplicated(["date", "asset"]).any():
+        msg = "predictions must contain at most one row per date and asset"
+        raise ValueError(msg)
     if holding_period_days <= 0:
         msg = "holding_period_days must be positive"
         raise ValueError(msg)
@@ -82,6 +92,22 @@ def _validate_inputs(
         raise ValueError(msg)
     if not 0 < quantile <= 0.5:
         msg = "quantile must be greater than 0 and at most 0.5"
+        raise ValueError(msg)
+
+
+def _validate_model_scores(predictions: pd.DataFrame, models: list[str]) -> None:
+    invalid_models: list[str] = []
+    for model in models:
+        try:
+            scores = predictions[model].to_numpy(dtype=float)
+        except (TypeError, ValueError):
+            invalid_models.append(model)
+            continue
+        if not np.isfinite(scores).all():
+            invalid_models.append(model)
+
+    if invalid_models:
+        msg = "model forecast columns must be numeric and finite: " + ", ".join(invalid_models)
         raise ValueError(msg)
 
 

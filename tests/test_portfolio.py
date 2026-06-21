@@ -75,6 +75,36 @@ def test_evaluation_rejects_frames_without_model_forecasts() -> None:
         evaluate_predictions(predictions)
 
 
+def test_evaluation_rejects_duplicate_asset_dates() -> None:
+    predictions = pd.concat(
+        [_simple_predictions(), _simple_predictions().iloc[[0]]], ignore_index=True
+    )
+
+    with pytest.raises(ValueError, match="at most one row per date and asset"):
+        evaluate_predictions(predictions)
+
+
+def test_evaluation_rejects_missing_required_values() -> None:
+    predictions = _simple_predictions()
+    predictions.loc[0, "label"] = np.nan
+
+    with pytest.raises(ValueError, match="missing required values: label"):
+        evaluate_predictions(predictions)
+
+
+@pytest.mark.parametrize("bad_score", [np.nan, np.inf, "not-a-number"])
+def test_evaluation_rejects_non_finite_model_scores(bad_score: object) -> None:
+    predictions = _simple_predictions()
+    if isinstance(bad_score, str):
+        predictions["ridge"] = predictions["ridge"].astype(object)
+    predictions.loc[0, "ridge"] = bad_score
+
+    with pytest.raises(
+        ValueError, match="model forecast columns must be numeric and finite: ridge"
+    ):
+        evaluate_predictions(predictions)
+
+
 @pytest.mark.parametrize("quantile", [0.0, -0.1, 0.75])
 def test_evaluation_rejects_invalid_quantile(quantile: float) -> None:
     with pytest.raises(ValueError, match="quantile must be greater than 0 and at most 0.5"):
