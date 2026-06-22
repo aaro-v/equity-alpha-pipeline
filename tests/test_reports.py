@@ -227,10 +227,14 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     ) in report
     assert "## Tail Risk Diagnostics" in report
     assert (
-        "| model | worst_period_net_return | net_return_volatility | "
-        "positive_period_rate | max_drawdown | max_drawdown_periods |"
+        "| model | worst_period_net_return | net_return_var_5 | "
+        "net_return_expected_shortfall_5 | net_return_volatility | positive_period_rate | "
+        "max_drawdown | max_drawdown_periods |"
     ) in report
-    assert "| ridge\\|linear | -0.0305 | 0.0215 | 0.6667 | -0.0305 | 1 |" in report
+    assert (
+        "| ridge\\|linear | -0.0305 | -0.0265 | -0.0305 | 0.0215 | 0.6667 | "
+        "-0.0305 | 1 |"
+    ) in report
     assert "## Book Exposure Diagnostics" in report
     assert (
         "| model | side | avg_names_per_date | top_sector | top_sector_weight | "

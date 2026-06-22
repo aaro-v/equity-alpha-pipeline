@@ -254,10 +254,15 @@ def _tail_risk_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
         returns = frame["net_return"]
         drawdown = drawdown_series(returns)
         in_drawdown = drawdown < 0
+        net_return_var_5 = float(returns.quantile(0.05))
         rows.append(
             {
                 "model": model,
                 "worst_period_net_return": float(returns.min()),
+                "net_return_var_5": net_return_var_5,
+                "net_return_expected_shortfall_5": float(
+                    returns.loc[returns <= net_return_var_5].mean()
+                ),
                 "net_return_volatility": float(returns.std(ddof=0)),
                 "positive_period_rate": float((returns > 0).mean()),
                 "max_drawdown": float(drawdown.min()),
