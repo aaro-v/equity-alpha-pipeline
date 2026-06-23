@@ -163,6 +163,10 @@ def _render_report(
             "",
             _markdown_table(_tail_risk_summary(portfolio_returns)),
             "",
+            "## Underwater Diagnostics",
+            "",
+            _markdown_table(_underwater_summary(portfolio_returns)),
+            "",
             "## Book Exposure Diagnostics",
             "",
             _markdown_table(_book_exposure_summary(predictions)),
@@ -270,6 +274,48 @@ def _tail_risk_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows).sort_values("max_drawdown").reset_index(drop=True)
+
+
+def _underwater_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, bool | float | int | str]] = []
+    for model, frame in portfolio_returns.sort_values("date").groupby("model"):
+        returns = frame["net_return"].astype(float)
+        dates = pd.to_datetime(frame["date"]).reset_index(drop=True)
+        wealth = (1.0 + returns.reset_index(drop=True)).cumprod()
+        running_peak = wealth.cummax().clip(lower=1.0)
+        drawdown = wealth / running_peak - 1.0
+
+        trough_position = int(drawdown.to_numpy().argmin())
+        max_drawdown = float(drawdown.iloc[trough_position])
+        peak_value = float(running_peak.iloc[trough_position])
+        peak_candidates = wealth.iloc[: trough_position + 1][
+            wealth.iloc[: trough_position + 1] >= peak_value
+        ]
+        peak_position = (
+            int(peak_candidates.index[-1]) if not peak_candidates.empty else trough_position
+        )
+        recovered_after_trough = bool(
+            (wealth.iloc[trough_position + 1 :] >= peak_value).any()
+        )
+
+        rows.append(
+            {
+                "model": model,
+                "periods": int(frame["date"].nunique()),
+                "ending_growth": float(wealth.iloc[-1]),
+                "peak_growth": float(running_peak.max()),
+                "underwater_period_rate": float((drawdown < 0).mean()),
+                "max_drawdown": max_drawdown,
+                "max_drawdown_start": dates.iloc[peak_position].date().isoformat(),
+                "max_drawdown_trough": dates.iloc[trough_position].date().isoformat(),
+                "recovered_after_trough": recovered_after_trough,
+            }
+        )
+    return (
+        pd.DataFrame(rows)
+        .sort_values(["underwater_period_rate", "max_drawdown"], ascending=[False, True])
+        .reset_index(drop=True)
+    )
 
 
 def _book_exposure_summary(predictions: pd.DataFrame, quantile: float = 0.2) -> pd.DataFrame:

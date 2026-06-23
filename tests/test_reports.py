@@ -235,6 +235,16 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
         "| ridge\\|linear | -0.0305 | -0.0265 | -0.0305 | 0.0215 | 0.6667 | "
         "-0.0305 | 1 |"
     ) in report
+    assert "## Underwater Diagnostics" in report
+    assert (
+        "| model | periods | ending_growth | peak_growth | underwater_period_rate | "
+        "max_drawdown | max_drawdown_start | max_drawdown_trough | "
+        "recovered_after_trough |"
+    ) in report
+    assert (
+        "| ridge\\|linear | 3 | 0.9973 | 1.0287 | 0.3333 | -0.0305 | "
+        "2024-01-03 | 2024-01-04 | False |"
+    ) in report
     assert "## Book Exposure Diagnostics" in report
     assert (
         "| model | side | avg_names_per_date | top_sector | top_sector_weight | "
