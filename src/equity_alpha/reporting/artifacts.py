@@ -155,6 +155,10 @@ def _render_report(
             "",
             _markdown_table(_portfolio_summary(portfolio_returns)),
             "",
+            "## Turnover Stability",
+            "",
+            _markdown_table(_turnover_stability_summary(portfolio_returns)),
+            "",
             "## Return Consistency",
             "",
             _markdown_table(_return_consistency_summary(portfolio_returns)),
@@ -226,6 +230,28 @@ def _portfolio_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
             avg_turnover=("turnover", "mean"),
             avg_cost_drag=("cost_drag", "mean"),
         )
+    )
+
+
+def _turnover_stability_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, float | int | str]] = []
+    for model, frame in portfolio_returns.sort_values("date").groupby("model"):
+        turnover = frame["turnover"].astype(float)
+        rows.append(
+            {
+                "model": model,
+                "periods": int(frame["date"].nunique()),
+                "avg_turnover": float(turnover.mean()),
+                "turnover_volatility": float(turnover.std(ddof=0)),
+                "p95_turnover": float(turnover.quantile(0.95)),
+                "max_turnover": float(turnover.max()),
+                "high_turnover_rate": float((turnover > turnover.mean()).mean()),
+            }
+        )
+    return (
+        pd.DataFrame(rows)
+        .sort_values(["avg_turnover", "turnover_volatility"], ascending=False)
+        .reset_index(drop=True)
     )
 
 

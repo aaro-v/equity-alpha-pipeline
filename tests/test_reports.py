@@ -216,6 +216,14 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
         "avg_cost_drag |"
     ) in report
     assert "| ridge\\|linear | 3 | 0.0000 | -0.0007 | 0.6667 | 0.0007 |" in report
+    assert "## Turnover Stability" in report
+    assert (
+        "| model | periods | avg_turnover | turnover_volatility | p95_turnover | "
+        "max_turnover | high_turnover_rate |"
+    ) in report
+    assert (
+        "| ridge\\|linear | 3 | 0.6667 | 0.2357 | 0.9500 | 1.0000 | 0.3333 |"
+    ) in report
     assert "## Return Consistency" in report
     assert (
         "| model | periods | mean_net_return | median_net_return | cumulative_return | "
