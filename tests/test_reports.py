@@ -181,6 +181,12 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
         "missing_score_rate | unique_score_rate |"
     ) in report
     assert "| ridge\\|linear | 2 | 2 | 1 | 1.0000 | 0.5000 | 0.5000 |" in report
+    assert "## Score Dispersion Diagnostics" in report
+    assert (
+        "| model | dates | score_mean | score_std | avg_daily_score_std | "
+        "min_daily_unique_scores | avg_daily_unique_score_rate |"
+    ) in report
+    assert "| ridge\\|linear | 1 | 0.2000 | 0.0000 | 0.0000 | 1 | 1.0000 |" in report
     assert "## Signal Spread Diagnostics" in report
     assert (
         "| model | dates | long_avg_label | short_avg_label | label_spread | "

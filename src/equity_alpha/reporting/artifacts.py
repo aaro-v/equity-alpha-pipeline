@@ -135,6 +135,10 @@ def _render_report(
             "",
             _markdown_table(_prediction_coverage_summary(predictions)),
             "",
+            "## Score Dispersion Diagnostics",
+            "",
+            _markdown_table(_score_dispersion_summary(predictions)),
+            "",
             "## Signal Spread Diagnostics",
             "",
             _markdown_table(_signal_spread_summary(predictions)),
@@ -412,6 +416,54 @@ def _prediction_coverage_summary(predictions: pd.DataFrame) -> pd.DataFrame:
     return (
         pd.DataFrame(rows)
         .sort_values(["missing_score_rate", "unique_score_rate"], ascending=[True, False])
+        .reset_index(drop=True)
+    )
+
+
+def _score_dispersion_summary(predictions: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, float | int | str]] = []
+
+    for model in model_columns(predictions):
+        scores = predictions[model].dropna().astype(float)
+        daily = (
+            predictions.dropna(subset=[model])
+            .groupby("date")[model]
+            .agg(
+                daily_score_std=lambda values: values.astype(float).std(ddof=0),
+                daily_unique_scores="nunique",
+                daily_rows="count",
+            )
+        )
+        if daily.empty:
+            rows.append(
+                {
+                    "model": model,
+                    "dates": 0,
+                    "score_mean": float("nan"),
+                    "score_std": float("nan"),
+                    "avg_daily_score_std": float("nan"),
+                    "min_daily_unique_scores": 0,
+                    "avg_daily_unique_score_rate": float("nan"),
+                }
+            )
+            continue
+
+        daily_unique_rate = daily["daily_unique_scores"] / daily["daily_rows"]
+        rows.append(
+            {
+                "model": model,
+                "dates": int(daily.index.nunique()),
+                "score_mean": float(scores.mean()),
+                "score_std": float(scores.std(ddof=0)),
+                "avg_daily_score_std": float(daily["daily_score_std"].mean()),
+                "min_daily_unique_scores": int(daily["daily_unique_scores"].min()),
+                "avg_daily_unique_score_rate": float(daily_unique_rate.mean()),
+            }
+        )
+
+    return (
+        pd.DataFrame(rows)
+        .sort_values(["avg_daily_unique_score_rate", "avg_daily_score_std"], ascending=False)
         .reset_index(drop=True)
     )
 
