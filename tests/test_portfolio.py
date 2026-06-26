@@ -35,6 +35,19 @@ def test_positive_return_rate_reports_net_return_hit_rate() -> None:
     assert hit_rate == pytest.approx(0.75)
 
 
+def test_portfolio_returns_include_book_exposure_diagnostics() -> None:
+    _, portfolio_returns, _ = evaluate_predictions(
+        _simple_predictions(), cost_bps=0.0, quantile=0.25
+    )
+
+    ridge_returns = portfolio_returns.loc[portfolio_returns["model"] == "ridge"]
+
+    assert ridge_returns["long_names"].tolist() == [1, 1, 1, 1]
+    assert ridge_returns["short_names"].tolist() == [1, 1, 1, 1]
+    assert ridge_returns["gross_exposure"].tolist() == pytest.approx([2.0, 2.0, 2.0, 2.0])
+    assert ridge_returns["net_exposure"].tolist() == pytest.approx([0.0, 0.0, 0.0, 0.0])
+
+
 def test_drawdown_includes_loss_from_initial_capital() -> None:
     returns = pd.Series([-0.10, 0.05, 0.10])
 

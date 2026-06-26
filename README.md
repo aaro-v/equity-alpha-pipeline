@@ -97,9 +97,10 @@ equity-alpha sample-data --output data/cache/sample_panel.parquet
 - Purged and embargo-stepped walk-forward validation.
 - Ridge, histogram gradient boosting, and small PyTorch neural-network
   forecasters.
-- IC, rank IC, turnover, cost-adjusted Sharpe, drawdown, sector attribution,
-  signal spread diagnostics, positive-return rate, long-short portfolio
-  returns, and generated Markdown/CSV/PNG artifacts with a checksum manifest.
+- IC, rank IC, turnover, gross/net exposure, cost-adjusted Sharpe, drawdown,
+  sector attribution, signal spread diagnostics, positive-return rate,
+  long-short portfolio returns, and generated Markdown/CSV/PNG artifacts with a
+  checksum manifest.
 
 The generated outputs are for engineering validation only. They use synthetic
 data and should not be read as evidence of live-market profitability.

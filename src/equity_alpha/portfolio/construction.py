@@ -138,6 +138,10 @@ def _portfolio_returns(
             {
                 "date": date,
                 "gross_return": gross_return,
+                "gross_exposure": float(weights.abs().sum()),
+                "net_exposure": float(weights.sum()),
+                "long_names": int((weights > 0).sum()),
+                "short_names": int((weights < 0).sum()),
                 "turnover": turnover,
                 "net_return": net_return,
             }

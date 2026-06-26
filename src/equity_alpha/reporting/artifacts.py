@@ -222,15 +222,26 @@ def _benchmark_comparison(metrics: pd.DataFrame) -> pd.DataFrame:
 
 
 def _portfolio_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
+    gross_exposure = portfolio_returns.get(
+        "gross_exposure", pd.Series(float("nan"), index=portfolio_returns.index)
+    )
+    net_exposure = portfolio_returns.get(
+        "net_exposure", pd.Series(float("nan"), index=portfolio_returns.index)
+    )
+    frame = portfolio_returns.assign(
+        cost_drag=portfolio_returns["gross_return"] - portfolio_returns["net_return"],
+        gross_exposure=gross_exposure,
+        abs_net_exposure=net_exposure.abs(),
+    )
     return (
-        portfolio_returns.assign(
-            cost_drag=portfolio_returns["gross_return"] - portfolio_returns["net_return"]
-        )
+        frame
         .groupby("model", as_index=False)
         .agg(
             periods=("date", "nunique"),
             avg_gross_return=("gross_return", "mean"),
             avg_net_return=("net_return", "mean"),
+            avg_gross_exposure=("gross_exposure", "mean"),
+            avg_abs_net_exposure=("abs_net_exposure", "mean"),
             avg_turnover=("turnover", "mean"),
             avg_cost_drag=("cost_drag", "mean"),
         )

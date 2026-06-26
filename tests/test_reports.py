@@ -104,6 +104,10 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
             {
                 "date": pd.Timestamp("2024-01-02"),
                 "gross_return": 0.01,
+                "gross_exposure": 2.0,
+                "net_exposure": 0.0,
+                "long_names": 1,
+                "short_names": 1,
                 "turnover": 1.0,
                 "net_return": 0.009,
                 "model": "ridge|linear",
@@ -111,6 +115,10 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
             {
                 "date": pd.Timestamp("2024-01-03"),
                 "gross_return": 0.02,
+                "gross_exposure": 2.0,
+                "net_exposure": 0.0,
+                "long_names": 1,
+                "short_names": 1,
                 "turnover": 0.5,
                 "net_return": 0.0195,
                 "model": "ridge|linear",
@@ -118,6 +126,10 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
             {
                 "date": pd.Timestamp("2024-01-04"),
                 "gross_return": -0.03,
+                "gross_exposure": 1.8,
+                "net_exposure": 0.2,
+                "long_names": 1,
+                "short_names": 1,
                 "turnover": 0.5,
                 "net_return": -0.0305,
                 "model": "ridge|linear",
@@ -218,10 +230,13 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     assert "| ridge\\|linear | 2 | nan | nan | 1.0000 | 0.0090 | 0.0195 |" in report
     assert "## Portfolio Diagnostics" in report
     assert (
-        "| model | periods | avg_gross_return | avg_net_return | avg_turnover | "
-        "avg_cost_drag |"
+        "| model | periods | avg_gross_return | avg_net_return | avg_gross_exposure | "
+        "avg_abs_net_exposure | avg_turnover | avg_cost_drag |"
     ) in report
-    assert "| ridge\\|linear | 3 | 0.0000 | -0.0007 | 0.6667 | 0.0007 |" in report
+    assert (
+        "| ridge\\|linear | 3 | 0.0000 | -0.0007 | 1.9333 | 0.0667 | "
+        "0.6667 | 0.0007 |"
+    ) in report
     assert "## Turnover Stability" in report
     assert (
         "| model | periods | avg_turnover | turnover_volatility | p95_turnover | "
