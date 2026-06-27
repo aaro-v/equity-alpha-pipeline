@@ -5,7 +5,7 @@ import json
 import pandas as pd
 import pytest
 
-from equity_alpha.reporting.artifacts import _signal_spread_summary
+from equity_alpha.reporting.artifacts import _ic_stability_summary, _signal_spread_summary
 from equity_alpha.reports import write_artifacts
 
 
@@ -72,6 +72,74 @@ def test_signal_spread_summary_compares_top_and_bottom_scores() -> None:
     assert row["short_avg_label"] == pytest.approx(-0.015)
     assert row["label_spread"] == pytest.approx(0.05)
     assert row["future_return_spread"] == pytest.approx(0.05)
+
+
+def test_ic_stability_summary_reports_daily_cross_sectional_persistence() -> None:
+    predictions = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp("2024-01-02"),
+                "asset": "A",
+                "sector": "Energy",
+                "label": 0.04,
+                "future_return": 0.04,
+                "ridge": 0.9,
+            },
+            {
+                "date": pd.Timestamp("2024-01-02"),
+                "asset": "B",
+                "sector": "Technology",
+                "label": 0.01,
+                "future_return": 0.01,
+                "ridge": 0.1,
+            },
+            {
+                "date": pd.Timestamp("2024-01-02"),
+                "asset": "C",
+                "sector": "Financials",
+                "label": -0.01,
+                "future_return": -0.01,
+                "ridge": -0.8,
+            },
+            {
+                "date": pd.Timestamp("2024-01-03"),
+                "asset": "A",
+                "sector": "Energy",
+                "label": -0.02,
+                "future_return": -0.02,
+                "ridge": 0.8,
+            },
+            {
+                "date": pd.Timestamp("2024-01-03"),
+                "asset": "B",
+                "sector": "Technology",
+                "label": 0.00,
+                "future_return": 0.00,
+                "ridge": 0.1,
+            },
+            {
+                "date": pd.Timestamp("2024-01-03"),
+                "asset": "C",
+                "sector": "Financials",
+                "label": 0.03,
+                "future_return": 0.03,
+                "ridge": -0.7,
+            },
+        ]
+    )
+
+    summary = _ic_stability_summary(predictions)
+
+    row = summary.iloc[0]
+    assert row["model"] == "ridge"
+    assert row["dates"] == 2
+    assert row["valid_ic_dates"] == 2
+    assert row["positive_ic_rate"] == pytest.approx(0.5)
+    assert row["avg_rank_ic"] == pytest.approx(0.0)
+    assert row["rank_ic_volatility"] == pytest.approx(1.0)
+    assert row["positive_rank_ic_rate"] == pytest.approx(0.5)
+    assert row["worst_rank_ic"] == pytest.approx(-1.0)
+    assert row["best_rank_ic"] == pytest.approx(1.0)
 
 
 def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
@@ -181,6 +249,15 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     ) in report
     assert "| tree | tree | 0.0000 | 0.0000 | 0.0000 |" in report
     assert "| ridge\\|linear | tree | -0.1000 | -1.5000 | -0.1000 |" in report
+    assert "## IC Stability" in report
+    assert (
+        "| model | dates | valid_ic_dates | avg_ic | ic_volatility | positive_ic_rate | "
+        "avg_rank_ic | rank_ic_volatility | positive_rank_ic_rate | worst_rank_ic | "
+        "best_rank_ic |"
+    ) in report
+    assert (
+        "| ridge\\|linear | 2 | 0 | nan | nan | nan | nan | nan | nan | nan | nan |"
+    ) in report
     assert "## Validation Summary" in report
     assert (
         "| folds | start_date | end_date | prediction_rows | unique_assets | "

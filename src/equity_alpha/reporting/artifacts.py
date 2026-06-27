@@ -127,6 +127,10 @@ def _render_report(
             "",
             _markdown_table(_benchmark_comparison(metrics)),
             "",
+            "## IC Stability",
+            "",
+            _markdown_table(_ic_stability_summary(predictions)),
+            "",
             "## Validation Summary",
             "",
             _markdown_table(_validation_summary(predictions)),
@@ -245,6 +249,41 @@ def _portfolio_summary(portfolio_returns: pd.DataFrame) -> pd.DataFrame:
             avg_turnover=("turnover", "mean"),
             avg_cost_drag=("cost_drag", "mean"),
         )
+    )
+
+
+def _ic_stability_summary(predictions: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, float | int | str]] = []
+    for model in model_columns(predictions):
+        daily = predictions.groupby("date").apply(
+            lambda frame, col=model: pd.Series(
+                {
+                    "ic": _safe_corr(frame[col], frame["label"]),
+                    "rank_ic": _safe_corr(frame[col].rank(), frame["label"].rank()),
+                }
+            )
+        )
+        ic = daily["ic"].dropna()
+        rank_ic = daily["rank_ic"].dropna()
+        rows.append(
+            {
+                "model": model,
+                "dates": int(daily.index.nunique()),
+                "valid_ic_dates": int(ic.count()),
+                "avg_ic": float(ic.mean()),
+                "ic_volatility": float(ic.std(ddof=0)),
+                "positive_ic_rate": float((ic > 0).mean()),
+                "avg_rank_ic": float(rank_ic.mean()),
+                "rank_ic_volatility": float(rank_ic.std(ddof=0)),
+                "positive_rank_ic_rate": float((rank_ic > 0).mean()),
+                "worst_rank_ic": float(rank_ic.min()),
+                "best_rank_ic": float(rank_ic.max()),
+            }
+        )
+    return (
+        pd.DataFrame(rows)
+        .sort_values(["avg_rank_ic", "positive_rank_ic_rate"], ascending=False)
+        .reset_index(drop=True)
     )
 
 
