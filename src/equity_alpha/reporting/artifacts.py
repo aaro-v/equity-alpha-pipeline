@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -20,6 +21,7 @@ def write_artifacts(
 ) -> Path:
     """Write CSV artifacts, an equity-curve chart, and a Markdown report."""
 
+    _validate_artifact_inputs(metrics, portfolio_returns, sector_attribution, predictions)
     output_dir.mkdir(parents=True, exist_ok=True)
     metrics.to_csv(output_dir / "metrics.csv", index=False)
     portfolio_returns.to_csv(output_dir / "portfolio_returns.csv", index=False)
@@ -46,6 +48,58 @@ def write_artifacts(
         ],
     )
     return report_path
+
+
+def _validate_artifact_inputs(
+    metrics: pd.DataFrame,
+    portfolio_returns: pd.DataFrame,
+    sector_attribution: pd.DataFrame,
+    predictions: pd.DataFrame,
+) -> None:
+    _require_columns(
+        metrics,
+        "metrics",
+        [
+            "model",
+            "mean_rank_ic",
+            "portfolio_return",
+            "cost_adjusted_sharpe",
+        ],
+    )
+    _require_columns(
+        portfolio_returns,
+        "portfolio_returns",
+        [
+            "date",
+            "model",
+            "gross_return",
+            "net_return",
+            "turnover",
+        ],
+    )
+    _require_columns(sector_attribution, "sector_attribution", ["model", "sector", "rank_ic"])
+    _require_columns(
+        predictions,
+        "predictions",
+        [
+            "date",
+            "asset",
+            "sector",
+            "label",
+            "future_return",
+            "fold",
+        ],
+    )
+    if not model_columns(predictions):
+        msg = "predictions must include at least one model score column"
+        raise ValueError(msg)
+
+
+def _require_columns(frame: pd.DataFrame, name: str, columns: Iterable[str]) -> None:
+    missing = [column for column in columns if column not in frame.columns]
+    if missing:
+        msg = f"{name} missing required columns: {', '.join(missing)}"
+        raise ValueError(msg)
 
 
 def _write_manifest(

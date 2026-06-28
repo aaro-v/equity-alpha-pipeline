@@ -258,6 +258,7 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     assert (
         "| ridge\\|linear | 2 | 0 | nan | nan | nan | nan | nan | nan | nan | nan |"
     ) in report
+
     assert "## Validation Summary" in report
     assert (
         "| folds | start_date | end_date | prediction_rows | unique_assets | "
@@ -377,3 +378,76 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     assert artifacts["metrics.csv"]["columns"] == list(metrics.columns)
     assert artifacts["metrics.csv"]["bytes"] == (tmp_path / "metrics.csv").stat().st_size
     assert len(artifacts["metrics.csv"]["sha256"]) == 64
+
+
+def test_write_artifacts_rejects_missing_required_columns(tmp_path) -> None:
+    metrics, portfolio_returns, sector_attribution, predictions = _minimal_artifact_frames()
+    bad_predictions = predictions.drop(columns=["future_return"])
+
+    with pytest.raises(
+        ValueError, match="predictions missing required columns: future_return"
+    ):
+        write_artifacts(
+            tmp_path,
+            metrics=metrics,
+            portfolio_returns=portfolio_returns,
+            sector_attribution=sector_attribution,
+            predictions=bad_predictions,
+        )
+
+
+def test_write_artifacts_requires_model_score_columns(tmp_path) -> None:
+    metrics, portfolio_returns, sector_attribution, predictions = _minimal_artifact_frames()
+    metadata_only = predictions.drop(columns=["ridge"])
+
+    with pytest.raises(
+        ValueError, match="predictions must include at least one model score column"
+    ):
+        write_artifacts(
+            tmp_path,
+            metrics=metrics,
+            portfolio_returns=portfolio_returns,
+            sector_attribution=sector_attribution,
+            predictions=metadata_only,
+        )
+
+
+def _minimal_artifact_frames() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    metrics = pd.DataFrame(
+        [
+            {
+                "model": "ridge",
+                "mean_rank_ic": 0.1,
+                "portfolio_return": 0.02,
+                "cost_adjusted_sharpe": 0.8,
+            }
+        ]
+    )
+    portfolio_returns = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp("2024-01-02"),
+                "model": "ridge",
+                "gross_return": 0.01,
+                "net_return": 0.009,
+                "turnover": 0.5,
+            }
+        ]
+    )
+    sector_attribution = pd.DataFrame(
+        [{"model": "ridge", "sector": "Energy", "rank_ic": 0.1}]
+    )
+    predictions = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp("2024-01-02"),
+                "asset": "A",
+                "sector": "Energy",
+                "label": 0.01,
+                "future_return": 0.01,
+                "fold": 1,
+                "ridge": 0.2,
+            }
+        ]
+    )
+    return metrics, portfolio_returns, sector_attribution, predictions
