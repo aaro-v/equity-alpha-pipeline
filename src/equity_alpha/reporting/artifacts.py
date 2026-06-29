@@ -38,6 +38,9 @@ def write_artifacts(
     report_path.write_text(report, encoding="utf-8")
     _write_manifest(
         output_dir / "manifest.json",
+        metrics=metrics,
+        portfolio_returns=portfolio_returns,
+        predictions=predictions,
         artifacts=[
             ("metrics.csv", metrics),
             ("portfolio_returns.csv", portfolio_returns),
@@ -103,10 +106,19 @@ def _require_columns(frame: pd.DataFrame, name: str, columns: Iterable[str]) -> 
 
 
 def _write_manifest(
-    path: Path, artifacts: list[tuple[str, pd.DataFrame | None]]
+    path: Path,
+    metrics: pd.DataFrame,
+    portfolio_returns: pd.DataFrame,
+    predictions: pd.DataFrame,
+    artifacts: list[tuple[str, pd.DataFrame | None]],
 ) -> None:
     manifest = {
         "artifact_format": 1,
+        "run_metadata": _manifest_run_metadata(
+            metrics=metrics,
+            portfolio_returns=portfolio_returns,
+            predictions=predictions,
+        ),
         "artifacts": [
             {
                 "path": artifact_path.name,
@@ -126,6 +138,31 @@ def _write_manifest(
         ],
     }
     path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _manifest_run_metadata(
+    metrics: pd.DataFrame | None,
+    portfolio_returns: pd.DataFrame | None,
+    predictions: pd.DataFrame | None,
+) -> dict[str, object]:
+    if metrics is None or portfolio_returns is None or predictions is None:
+        msg = "metrics, portfolio_returns, and predictions are required for manifest metadata"
+        raise ValueError(msg)
+
+    prediction_dates = pd.to_datetime(predictions["date"])
+    portfolio_dates = pd.to_datetime(portfolio_returns["date"])
+    return {
+        "models": model_columns(predictions),
+        "metric_models": metrics["model"].astype(str).tolist(),
+        "folds": int(predictions["fold"].nunique()),
+        "prediction_start": prediction_dates.min().date().isoformat(),
+        "prediction_end": prediction_dates.max().date().isoformat(),
+        "prediction_rows": len(predictions),
+        "unique_assets": int(predictions["asset"].nunique()),
+        "portfolio_start": portfolio_dates.min().date().isoformat(),
+        "portfolio_end": portfolio_dates.max().date().isoformat(),
+        "portfolio_periods": int(portfolio_returns["date"].nunique()),
+    }
 
 
 def _sha256_file(path: Path) -> str:

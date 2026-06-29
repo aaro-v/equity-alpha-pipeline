@@ -365,6 +365,18 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     assert (tmp_path / "equity_curve.png").exists()
     manifest = json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["artifact_format"] == 1
+    assert manifest["run_metadata"] == {
+        "models": ["ridge|linear"],
+        "metric_models": ["tree", "ridge|linear"],
+        "folds": 2,
+        "prediction_start": "2024-01-02",
+        "prediction_end": "2024-01-03",
+        "prediction_rows": 2,
+        "unique_assets": 2,
+        "portfolio_start": "2024-01-02",
+        "portfolio_end": "2024-01-04",
+        "portfolio_periods": 3,
+    }
     artifacts = {artifact["path"]: artifact for artifact in manifest["artifacts"]}
     assert set(artifacts) == {
         "metrics.csv",
