@@ -238,6 +238,10 @@ def _render_report(
             "",
             _markdown_table(_signal_spread_summary(predictions)),
             "",
+            "## Score Quantile Diagnostics",
+            "",
+            _markdown_table(_score_quantile_summary(predictions)),
+            "",
             "## Fold Breadth",
             "",
             _markdown_table(_fold_breadth_summary(predictions)),
@@ -669,6 +673,83 @@ def _signal_spread_summary(predictions: pd.DataFrame, quantile: float = 0.2) -> 
     return (
         pd.DataFrame(rows)
         .sort_values(["future_return_spread", "label_spread"], ascending=False)
+        .reset_index(drop=True)
+    )
+
+
+def _score_quantile_summary(
+    predictions: pd.DataFrame, max_quantiles: int = 5
+) -> pd.DataFrame:
+    rows: list[dict[str, float | int | str]] = []
+
+    for model in model_columns(predictions):
+        quantile_frames = []
+        for _, frame in predictions.groupby("date"):
+            valid = frame.dropna(subset=[model]).copy()
+            buckets = min(max_quantiles, len(valid), valid[model].nunique())
+            if buckets < 2:
+                continue
+
+            valid["score_quantile"] = (
+                pd.qcut(
+                    valid[model].rank(method="first"),
+                    q=buckets,
+                    labels=False,
+                    duplicates="drop",
+                )
+                + 1
+            )
+            quantile_frames.append(
+                valid.groupby("score_quantile", as_index=False).agg(
+                    date=("date", "first"),
+                    avg_label=("label", "mean"),
+                    avg_future_return=("future_return", "mean"),
+                )
+            )
+
+        if not quantile_frames:
+            rows.append(
+                {
+                    "model": model,
+                    "dates": 0,
+                    "quantiles": 0,
+                    "bottom_avg_future_return": float("nan"),
+                    "top_avg_future_return": float("nan"),
+                    "future_return_spread": float("nan"),
+                    "label_spread": float("nan"),
+                    "future_return_monotonicity": float("nan"),
+                }
+            )
+            continue
+
+        quantiles = pd.concat(quantile_frames, ignore_index=True)
+        mean_by_quantile = quantiles.groupby("score_quantile", as_index=False).agg(
+            avg_label=("avg_label", "mean"),
+            avg_future_return=("avg_future_return", "mean"),
+        )
+        bottom = mean_by_quantile.iloc[0]
+        top = mean_by_quantile.iloc[-1]
+        rows.append(
+            {
+                "model": model,
+                "dates": int(quantiles["date"].nunique()),
+                "quantiles": int(mean_by_quantile["score_quantile"].nunique()),
+                "bottom_avg_future_return": float(bottom["avg_future_return"]),
+                "top_avg_future_return": float(top["avg_future_return"]),
+                "future_return_spread": float(
+                    top["avg_future_return"] - bottom["avg_future_return"]
+                ),
+                "label_spread": float(top["avg_label"] - bottom["avg_label"]),
+                "future_return_monotonicity": _safe_corr(
+                    mean_by_quantile["score_quantile"],
+                    mean_by_quantile["avg_future_return"],
+                ),
+            }
+        )
+
+    return (
+        pd.DataFrame(rows)
+        .sort_values(["future_return_monotonicity", "future_return_spread"], ascending=False)
         .reset_index(drop=True)
     )
 

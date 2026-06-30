@@ -5,7 +5,11 @@ import json
 import pandas as pd
 import pytest
 
-from equity_alpha.reporting.artifacts import _ic_stability_summary, _signal_spread_summary
+from equity_alpha.reporting.artifacts import (
+    _ic_stability_summary,
+    _score_quantile_summary,
+    _signal_spread_summary,
+)
 from equity_alpha.reports import write_artifacts
 
 
@@ -140,6 +144,38 @@ def test_ic_stability_summary_reports_daily_cross_sectional_persistence() -> Non
     assert row["positive_rank_ic_rate"] == pytest.approx(0.5)
     assert row["worst_rank_ic"] == pytest.approx(-1.0)
     assert row["best_rank_ic"] == pytest.approx(1.0)
+
+
+def test_score_quantile_summary_reports_forward_return_monotonicity() -> None:
+    rows = []
+    for date, base in [
+        (pd.Timestamp("2024-01-02"), 0.00),
+        (pd.Timestamp("2024-01-03"), 0.01),
+    ]:
+        for rank in range(5):
+            rows.append(
+                {
+                    "date": date,
+                    "asset": f"asset_{rank}",
+                    "sector": "Energy",
+                    "label": base + rank * 0.01,
+                    "future_return": base + rank * 0.02,
+                    "ridge": float(rank),
+                }
+            )
+    predictions = pd.DataFrame(rows)
+
+    summary = _score_quantile_summary(predictions)
+
+    row = summary.iloc[0]
+    assert row["model"] == "ridge"
+    assert row["dates"] == 2
+    assert row["quantiles"] == 5
+    assert row["bottom_avg_future_return"] == pytest.approx(0.005)
+    assert row["top_avg_future_return"] == pytest.approx(0.085)
+    assert row["future_return_spread"] == pytest.approx(0.08)
+    assert row["label_spread"] == pytest.approx(0.04)
+    assert row["future_return_monotonicity"] == pytest.approx(1.0)
 
 
 def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
@@ -284,6 +320,15 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     ) in report
     assert (
         "| ridge\\|linear | 0 | nan | nan | nan | nan | nan | nan |"
+    ) in report
+    assert "## Score Quantile Diagnostics" in report
+    assert (
+        "| model | dates | quantiles | bottom_avg_future_return | "
+        "top_avg_future_return | future_return_spread | label_spread | "
+        "future_return_monotonicity |"
+    ) in report
+    assert (
+        "| ridge\\|linear | 0 | 0 | nan | nan | nan | nan | nan |"
     ) in report
     assert "## Fold Breadth" in report
     assert (
