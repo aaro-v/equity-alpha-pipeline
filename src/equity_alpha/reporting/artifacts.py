@@ -218,6 +218,10 @@ def _render_report(
             "",
             _markdown_table(_benchmark_comparison(metrics)),
             "",
+            "## Fold Benchmark Consistency",
+            "",
+            _markdown_table(_fold_benchmark_consistency(fold_summary)),
+            "",
             "## IC Stability",
             "",
             _markdown_table(_ic_stability_summary(predictions)),
@@ -316,6 +320,51 @@ def _benchmark_comparison(metrics: pd.DataFrame) -> pd.DataFrame:
             ]
         ]
         .sort_values("sharpe_delta", ascending=False)
+        .reset_index(drop=True)
+    )
+
+
+def _fold_benchmark_consistency(fold_summary: pd.DataFrame) -> pd.DataFrame:
+    benchmark_model = (
+        "ridge"
+        if "ridge" in set(fold_summary["model"])
+        else str(fold_summary["model"].iloc[0])
+    )
+    benchmark = fold_summary.loc[
+        fold_summary["model"] == benchmark_model, ["fold", "rank_ic", "net_return"]
+    ].rename(
+        columns={
+            "rank_ic": "benchmark_rank_ic",
+            "net_return": "benchmark_net_return",
+        }
+    )
+    relative = fold_summary.merge(benchmark, on="fold", how="left", validate="many_to_one")
+    relative = relative.assign(
+        benchmark=benchmark_model,
+        rank_ic_delta=relative["rank_ic"] - relative["benchmark_rank_ic"],
+        net_return_delta=relative["net_return"] - relative["benchmark_net_return"],
+    )
+    return (
+        relative.groupby(["model", "benchmark"], as_index=False)
+        .agg(
+            folds=("fold", "nunique"),
+            avg_rank_ic_delta=("rank_ic_delta", "mean"),
+            avg_net_return_delta=("net_return_delta", "mean"),
+            positive_rank_ic_delta_rate=(
+                "rank_ic_delta",
+                lambda values: float((values > 0).mean()),
+            ),
+            positive_net_return_delta_rate=(
+                "net_return_delta",
+                lambda values: float((values > 0).mean()),
+            ),
+            worst_net_return_delta=("net_return_delta", "min"),
+            best_net_return_delta=("net_return_delta", "max"),
+        )
+        .sort_values(
+            ["positive_net_return_delta_rate", "avg_net_return_delta"],
+            ascending=False,
+        )
         .reset_index(drop=True)
     )
 

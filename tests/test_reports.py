@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from equity_alpha.reporting.artifacts import (
+    _fold_benchmark_consistency,
     _ic_stability_summary,
     _score_quantile_summary,
     _signal_spread_summary,
@@ -178,6 +179,31 @@ def test_score_quantile_summary_reports_forward_return_monotonicity() -> None:
     assert row["future_return_monotonicity"] == pytest.approx(1.0)
 
 
+def test_fold_benchmark_consistency_reports_relative_fold_hit_rates() -> None:
+    fold_summary = pd.DataFrame(
+        [
+            {"model": "ridge", "fold": 1, "rank_ic": 0.10, "net_return": 0.010},
+            {"model": "ridge", "fold": 2, "rank_ic": 0.20, "net_return": 0.020},
+            {"model": "tree", "fold": 1, "rank_ic": 0.15, "net_return": 0.015},
+            {"model": "tree", "fold": 2, "rank_ic": 0.10, "net_return": 0.018},
+            {"model": "neural", "fold": 1, "rank_ic": 0.05, "net_return": 0.009},
+            {"model": "neural", "fold": 2, "rank_ic": 0.25, "net_return": 0.030},
+        ]
+    )
+
+    summary = _fold_benchmark_consistency(fold_summary)
+
+    tree = summary.loc[summary["model"] == "tree"].iloc[0]
+    assert tree["benchmark"] == "ridge"
+    assert tree["folds"] == 2
+    assert tree["avg_rank_ic_delta"] == pytest.approx(-0.025)
+    assert tree["avg_net_return_delta"] == pytest.approx(0.0015)
+    assert tree["positive_rank_ic_delta_rate"] == pytest.approx(0.5)
+    assert tree["positive_net_return_delta_rate"] == pytest.approx(0.5)
+    assert tree["worst_net_return_delta"] == pytest.approx(-0.002)
+    assert tree["best_net_return_delta"] == pytest.approx(0.005)
+
+
 def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     metrics = pd.DataFrame(
         [
@@ -285,6 +311,16 @@ def test_write_artifacts_escapes_markdown_table_values(tmp_path) -> None:
     ) in report
     assert "| tree | tree | 0.0000 | 0.0000 | 0.0000 |" in report
     assert "| ridge\\|linear | tree | -0.1000 | -1.5000 | -0.1000 |" in report
+    assert "## Fold Benchmark Consistency" in report
+    assert (
+        "| model | benchmark | folds | avg_rank_ic_delta | avg_net_return_delta | "
+        "positive_rank_ic_delta_rate | positive_net_return_delta_rate | "
+        "worst_net_return_delta | best_net_return_delta |"
+    ) in report
+    assert (
+        "| ridge\\|linear | ridge\\|linear | 2 | nan | 0.0000 | 0.0000 | "
+        "0.0000 | 0.0000 | 0.0000 |"
+    ) in report
     assert "## IC Stability" in report
     assert (
         "| model | dates | valid_ic_dates | avg_ic | ic_volatility | positive_ic_rate | "
