@@ -38,3 +38,43 @@ sqrt(252). IC summaries and t-statistics use dates spaced by the target horizon.
 Factor decay is measured at horizons 1, 5, 10, 21 and 63 trading days, each with
 its own non-overlapping signal sample. The annual IC chart averages daily IC and
 is descriptive because its targets overlap.
+
+## Execution and robustness specification
+
+The follow-up configuration was recorded on 2026-11-01 before evaluating the
+revised experiments. Training windows remain 504 dates, test windows 63 dates,
+and the outer purge 21 dates. The main signal is observed at close t, traded at
+close t+1, and labeled over the following 21 trading days, from t+1 to t+22.
+Training labels must be fully available by the first test signal close. Equality
+at that close is allowed because orders execute the following day.
+
+The neural architecture remains seven inputs, 12 ReLU hidden units and one output.
+Adam uses learning rate 0.001, weight decay 0.001, batch size 4,096 and at most 100
+epochs. Features and targets are standardized using the fitting slice only.
+The last 20% of training dates form validation, separated from the fitting slice
+by 22 trading dates. Early stopping uses patience 10 and minimum improvement
+0.0001 in standardized validation MSE, restoring the best weights. Seed 17 fixes
+initialization and mini-batch order. Validation history and optimizer updates
+are recorded for each fold.
+
+Five portfolio variants are reported: next-close execution; same-close execution
+using the same forecasts; size-neutralized features; a log-market-cap-neutral
+book using the original features; and both size controls together. Feature
+neutralization removes sector, beta and log-market-cap exposures before ranking;
+the size factor itself is zero in this variant. The book projects initial
+quintile weights onto the space orthogonal to the intercept and signal-date log
+market cap, then scales gross exposure to two. This hedge can include stocks
+outside the quintiles. Names without observed market cap are excluded from the
+hedged book. Neutrality is enforced against information available at the signal
+close and can drift between rebalances.
+
+Attribution regresses each model's daily net returns on the seven net factor
+quintile-spread returns with the same execution convention. Regressions include
+an intercept. Factor-adjusted Sharpe is calculated after subtracting the fitted
+factor component while retaining the intercept. Attribution is descriptive and
+estimated over the evaluation sample, rather than an executable strategy.
+
+Sharpe uncertainty uses 2,000 moving-block bootstrap draws, 63-date blocks, seed
+17 and percentile 95% intervals. At least two blocks of observations are required.
+Intervals are pointwise, without adjustment for the four forecasts, seven factors
+or the robustness variants.
