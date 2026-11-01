@@ -1,37 +1,181 @@
-sector,net_return_contribution,model
-Communication Services,0.03593644227,composite
-Consumer Discretionary,-0.01046545077,composite
-Consumer Staples,0.04158383827,composite
-Energy,-0.0135394129,composite
-Health Care,-0.02422868164,composite
-Industrials,-0.08826221491,composite
-Information Technology,0.09663498047,composite
-Materials,0.02463131028,composite
-Utilities,-0.03049557515,composite
-Communication Services,0.05918926949,ridge
-Consumer Discretionary,0.07830845495,ridge
-Consumer Staples,0.03522283724,ridge
-Energy,0.142514285,ridge
-Health Care,0.1461622871,ridge
-Industrials,0.2173238977,ridge
-Information Technology,0.3155892188,ridge
-Materials,0.0675867592,ridge
-Utilities,0.09224376412,ridge
-Communication Services,0.02788320993,tree
-Consumer Discretionary,0.1301459595,tree
-Consumer Staples,-0.04690563968,tree
-Energy,-0.06793814127,tree
-Health Care,0.1709356309,tree
-Industrials,0.02981969667,tree
-Information Technology,0.569545217,tree
-Materials,0.08819968304,tree
-Utilities,-0.1465053475,tree
-Communication Services,0.0002186966955,neural
-Consumer Discretionary,0.1362359636,neural
-Consumer Staples,-0.01843815216,neural
-Energy,-0.05638223725,neural
-Health Care,0.01673884002,neural
-Industrials,-0.1652742019,neural
-Information Technology,0.3406787838,neural
-Materials,-0.05999134705,neural
-Utilities,-0.02094154395,neural
+sector,net_return_contribution,model,variant
+Communication Services,0.03594475857,composite,main
+Consumer Discretionary,-0.01073458405,composite,main
+Consumer Staples,0.03085280858,composite,main
+Energy,-0.007928368933,composite,main
+Health Care,-0.008940186529,composite,main
+Industrials,-0.1044474994,composite,main
+Information Technology,0.09613277694,composite,main
+Materials,0.0194424719,composite,main
+Utilities,-0.03122803894,composite,main
+Communication Services,0.07336330668,ridge,main
+Consumer Discretionary,0.08061516761,ridge,main
+Consumer Staples,0.04084894755,ridge,main
+Energy,0.1577436701,ridge,main
+Health Care,0.1611859534,ridge,main
+Industrials,0.2167543079,ridge,main
+Information Technology,0.3227422957,ridge,main
+Materials,0.06630756675,ridge,main
+Utilities,0.0931405263,ridge,main
+Communication Services,0.04571779748,tree,main
+Consumer Discretionary,0.2045605389,tree,main
+Consumer Staples,-0.04505549148,tree,main
+Energy,-0.0234256994,tree,main
+Health Care,0.1801314552,tree,main
+Industrials,0.08774011231,tree,main
+Information Technology,0.5517305637,tree,main
+Materials,0.08269239127,tree,main
+Utilities,-0.1601176712,tree,main
+Communication Services,0.05135066638,neural,main
+Consumer Discretionary,0.09238683435,neural,main
+Consumer Staples,-0.03383539644,neural,main
+Energy,0.07118998509,neural,main
+Health Care,0.2135283199,neural,main
+Industrials,0.07771772588,neural,main
+Information Technology,0.4191027298,neural,main
+Materials,0.02261416354,neural,main
+Utilities,-0.03831595452,neural,main
+Communication Services,0.03593644227,composite,same_close
+Consumer Discretionary,-0.01046545077,composite,same_close
+Consumer Staples,0.04158383827,composite,same_close
+Energy,-0.0135394129,composite,same_close
+Health Care,-0.02422868164,composite,same_close
+Industrials,-0.08826221491,composite,same_close
+Information Technology,0.09663498047,composite,same_close
+Materials,0.02463131028,composite,same_close
+Utilities,-0.03049557515,composite,same_close
+Communication Services,0.07009488229,ridge,same_close
+Consumer Discretionary,0.08694167219,ridge,same_close
+Consumer Staples,0.04021944686,ridge,same_close
+Energy,0.1461301148,ridge,same_close
+Health Care,0.1375478878,ridge,same_close
+Industrials,0.2052470496,ridge,same_close
+Information Technology,0.2916798929,ridge,same_close
+Materials,0.06349538722,ridge,same_close
+Utilities,0.09187603265,ridge,same_close
+Communication Services,0.04771050174,tree,same_close
+Consumer Discretionary,0.16184015,tree,same_close
+Consumer Staples,-0.04012045564,tree,same_close
+Energy,-0.05535411318,tree,same_close
+Health Care,0.1843490876,tree,same_close
+Industrials,0.05697309273,tree,same_close
+Information Technology,0.524661453,tree,same_close
+Materials,0.0845684529,tree,same_close
+Utilities,-0.1662125293,tree,same_close
+Communication Services,0.04994040535,neural,same_close
+Consumer Discretionary,0.09948585451,neural,same_close
+Consumer Staples,-0.03921822638,neural,same_close
+Energy,0.0922725202,neural,same_close
+Health Care,0.2111742415,neural,same_close
+Industrials,0.03418225983,neural,same_close
+Information Technology,0.4000396425,neural,same_close
+Materials,0.01251066755,neural,same_close
+Utilities,-0.02688579429,neural,same_close
+Communication Services,0.03519046017,composite,cap_neutral_book
+Consumer Discretionary,0.01072582553,composite,cap_neutral_book
+Consumer Staples,0.03173888353,composite,cap_neutral_book
+Energy,0.02226503064,composite,cap_neutral_book
+Health Care,-0.006154791282,composite,cap_neutral_book
+Industrials,-0.09910757378,composite,cap_neutral_book
+Information Technology,0.1059113452,composite,cap_neutral_book
+Materials,0.04233482562,composite,cap_neutral_book
+Utilities,-0.0393619571,composite,cap_neutral_book
+Communication Services,0.1521343468,ridge,cap_neutral_book
+Consumer Discretionary,-0.03957980974,ridge,cap_neutral_book
+Consumer Staples,0.0932429377,ridge,cap_neutral_book
+Energy,0.05363202518,ridge,cap_neutral_book
+Health Care,0.1393615287,ridge,cap_neutral_book
+Industrials,-0.06250649285,ridge,cap_neutral_book
+Information Technology,0.08506835761,ridge,cap_neutral_book
+Materials,0.01090584024,ridge,cap_neutral_book
+Utilities,0.00701924332,ridge,cap_neutral_book
+Communication Services,0.07205870272,tree,cap_neutral_book
+Consumer Discretionary,0.09486817258,tree,cap_neutral_book
+Consumer Staples,-0.01634339434,tree,cap_neutral_book
+Energy,-0.04241473794,tree,cap_neutral_book
+Health Care,0.1633145902,tree,cap_neutral_book
+Industrials,-0.08127474472,tree,cap_neutral_book
+Information Technology,0.4515029699,tree,cap_neutral_book
+Materials,0.03916401691,tree,cap_neutral_book
+Utilities,-0.1842799956,tree,cap_neutral_book
+Communication Services,0.08275121547,neural,cap_neutral_book
+Consumer Discretionary,-0.01741616531,neural,cap_neutral_book
+Consumer Staples,-0.02648354533,neural,cap_neutral_book
+Energy,0.0102052873,neural,cap_neutral_book
+Health Care,0.1897942824,neural,cap_neutral_book
+Industrials,-0.1582973856,neural,cap_neutral_book
+Information Technology,0.2851054859,neural,cap_neutral_book
+Materials,-0.01786911351,neural,cap_neutral_book
+Utilities,-0.08140848752,neural,cap_neutral_book
+Communication Services,0.03737696868,composite,size_neutral_features
+Consumer Discretionary,0.121408771,composite,size_neutral_features
+Consumer Staples,0.09275277432,composite,size_neutral_features
+Energy,0.02653661372,composite,size_neutral_features
+Health Care,0.03620644049,composite,size_neutral_features
+Industrials,-0.06379138325,composite,size_neutral_features
+Information Technology,0.04291132212,composite,size_neutral_features
+Materials,-0.02192484112,composite,size_neutral_features
+Utilities,0.02087643461,composite,size_neutral_features
+Communication Services,0.05071570212,ridge,size_neutral_features
+Consumer Discretionary,0.00948128457,ridge,size_neutral_features
+Consumer Staples,0.03429210484,ridge,size_neutral_features
+Energy,0.1079565028,ridge,size_neutral_features
+Health Care,0.02986155271,ridge,size_neutral_features
+Industrials,0.05409861931,ridge,size_neutral_features
+Information Technology,0.1249902077,ridge,size_neutral_features
+Materials,0.04774300887,ridge,size_neutral_features
+Utilities,0.03711753768,ridge,size_neutral_features
+Communication Services,0.02018519799,tree,size_neutral_features
+Consumer Discretionary,0.128430596,tree,size_neutral_features
+Consumer Staples,-0.02722547715,tree,size_neutral_features
+Energy,0.0532471437,tree,size_neutral_features
+Health Care,0.07378392442,tree,size_neutral_features
+Industrials,-0.1210422925,tree,size_neutral_features
+Information Technology,0.4950880716,tree,size_neutral_features
+Materials,0.02343047251,tree,size_neutral_features
+Utilities,-0.1348933974,tree,size_neutral_features
+Communication Services,0.02254219323,neural,size_neutral_features
+Consumer Discretionary,0.03087619471,neural,size_neutral_features
+Consumer Staples,-0.01287084751,neural,size_neutral_features
+Energy,0.05565922865,neural,size_neutral_features
+Health Care,0.0486571384,neural,size_neutral_features
+Industrials,-0.02229135105,neural,size_neutral_features
+Information Technology,0.3511018321,neural,size_neutral_features
+Materials,0.01975309143,neural,size_neutral_features
+Utilities,-0.09429214699,neural,size_neutral_features
+Communication Services,0.0291530063,composite,size_neutral
+Consumer Discretionary,0.1515515487,composite,size_neutral
+Consumer Staples,0.08863949073,composite,size_neutral
+Energy,0.01706726955,composite,size_neutral
+Health Care,0.04344357736,composite,size_neutral
+Industrials,-0.05851783262,composite,size_neutral
+Information Technology,0.0501064512,composite,size_neutral
+Materials,-0.005776348226,composite,size_neutral
+Utilities,0.01730111435,composite,size_neutral
+Communication Services,0.05486488757,ridge,size_neutral
+Consumer Discretionary,-0.004595585279,ridge,size_neutral
+Consumer Staples,0.01430196594,ridge,size_neutral
+Energy,0.1008451957,ridge,size_neutral
+Health Care,0.02610561661,ridge,size_neutral
+Industrials,0.07024406688,ridge,size_neutral
+Information Technology,0.1122112343,ridge,size_neutral
+Materials,0.04259048986,ridge,size_neutral
+Utilities,0.04399187043,ridge,size_neutral
+Communication Services,0.02116846102,tree,size_neutral
+Consumer Discretionary,0.152391294,tree,size_neutral
+Consumer Staples,-0.0251257272,tree,size_neutral
+Energy,0.04387220903,tree,size_neutral
+Health Care,0.07248090165,tree,size_neutral
+Industrials,-0.1413454691,tree,size_neutral
+Information Technology,0.4503244318,tree,size_neutral
+Materials,0.03527502068,tree,size_neutral
+Utilities,-0.1406889558,tree,size_neutral
+Communication Services,0.02537095134,neural,size_neutral
+Consumer Discretionary,0.04143308822,neural,size_neutral
+Consumer Staples,-0.01129871032,neural,size_neutral
+Energy,0.07268051682,neural,size_neutral
+Health Care,0.02530778206,neural,size_neutral
+Industrials,-0.005864871286,neural,size_neutral
+Information Technology,0.3459036959,neural,size_neutral
+Materials,0.01369694912,neural,size_neutral
+Utilities,-0.09339997858,neural,size_neutral

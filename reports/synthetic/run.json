@@ -8,22 +8,30 @@
     },
     "models": {
       "include_neural": true,
-      "neural_epochs": 25,
+      "neural_epochs": 100,
+      "neural_batch_size": 4096,
+      "neural_patience": 10,
+      "neural_learning_rate": 0.001,
       "seed": 17
     },
     "horizon": 21,
     "cost_bps": 5.0,
-    "panel_path": "data/synthetic/panel.parquet"
+    "panel_path": "data/synthetic/panel.parquet",
+    "execution_lag": 1,
+    "robustness": true,
+    "bootstrap_samples": 2000,
+    "bootstrap_block_days": 63
   },
   "data_source": "data/synthetic/panel.parquet",
   "panel_start": "2018-01-02",
   "panel_end": "2025-09-23",
   "panel_rows": 201600,
   "panel_assets": 100,
+  "panel_trading_days": 2016,
   "test_start": "2020-07-08",
   "test_end": "2025-08-01",
   "test_assets": 100,
-  "git_commit": "b7f54e66812c0ccd5370bd485a679f543cdbb57d",
+  "git_commit": "38bf2850ced7c7bf5a83ea3c180cf83c0eeb4b62",
   "git_dirty": false,
   "python": "3.12.10",
   "versions": {
@@ -31,11 +39,16 @@
     "pandas": "3.1.0",
     "scikit-learn": "1.9.1",
     "scipy": "1.18.1",
-    "torch": "2.15.0",
     "matplotlib": "3.11.2",
-    "pyarrow": "26.0.0"
+    "pyarrow": "26.0.0",
+    "torch": "2.15.0"
   },
-  "portfolio_convention": "long 100%, short 100%; shares held; close execution; final liquidation",
+  "portfolio_convention": "gross exposure two; shares held; execution lag 1; final liquidation",
   "ic_convention": "non-overlapping target-horizon signal dates; daily series descriptive",
-  "panel_trading_days": 2016
+  "attribution_convention": "OLS with intercept; adjusted returns retain alpha; net factors matched by execution lag",
+  "multiple_comparisons": {
+    "forecasts": 4,
+    "factors": 7,
+    "interval_adjustment": "none (pointwise)"
+  }
 }

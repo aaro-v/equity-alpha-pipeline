@@ -31,8 +31,8 @@ epochs. Features and targets are standardized using the fitting slice only.
 The last 20% of training dates form validation, separated from the fitting slice
 by 22 trading dates. Early stopping uses patience 10 and minimum improvement
 0.0001 in standardized validation MSE, restoring the best weights. Seed 17 fixes
-initialization and mini-batch order. Validation history and optimizer updates
-are recorded for each fold. The validation slice is never used to fit scalers.
+initialization and mini-batch order. Best validation loss and optimizer update
+counts are recorded for each fold. The validation slice is never used to fit scalers.
 
 The synthetic report uses 100 assets, 2,016 business days and generator seed 7.
 

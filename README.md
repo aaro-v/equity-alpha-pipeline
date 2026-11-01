@@ -1,131 +1,97 @@
 # Cross-sectional equity alpha
 
-## Research question
-
-Can linear, tree and small neural models turn familiar equity factors into better
-out-of-sample forecasts than an equal-weight composite? This project tests that
-question with rolling historical training windows and a long-short quintile book.
+The strongest observed portfolio result is tied to familiar factor exposures,
+including a material size tilt. Ridge achieves a next-close net Sharpe of 0.74;
+seven factor portfolios explain 59% of its daily return variance, and its
+factor-adjusted Sharpe is -0.21. A log-market-cap-neutral book reduces its Sharpe
+to 0.29, with a 95% moving-block bootstrap interval of [-0.17, 0.91]. Historical
+size effects in this current-constituent universe are vulnerable to survivorship
+bias, and the tests provide limited evidence of additional alpha after factor
+controls.
 
 ## Data
 
-The saved experiment uses 397 current S&P 500 constituents outside
-Financials and Real Estate, with 1,391,906 observations from
-2012-01-03 through 2026-10-30. Yahoo Finance supplies adjusted daily
-prices, SEC EDGAR supplies first-filed financial statements, and Wikipedia supplies
-the current constituent list and sectors.
+The panel contains 397 current S&P 500 constituents outside Financials and Real
+Estate, with 1,391,906 observations from 2012-01-03 through 2026-10-30. Yahoo Finance
+supplies adjusted daily prices, SEC EDGAR supplies first-filed financial statements,
+and Wikipedia supplies the current constituent list and sectors. Fundamentals
+become available on the business day after filing. Missing factor ranks are
+imputed to zero after centering, retaining companies without gross margin.
 
-Fundamentals enter the panel on the business day after filing and expire when
-older than the builder's staleness limit. Price features use trailing observations.
-Missing fundamentals remain in the universe: missing factor ranks are imputed to
-zero after centering. Quality is observed for 71.2%
-of out-of-sample company dates. Recently listed names need sufficient price history
-before becoming eligible. The universe is selected from current constituents, so
-historical results contain survivorship bias.
-
-The data builder writes daily prices, quarterly fundamentals, a universe table and
-a modeling panel. The deterministic synthetic generator writes the same schemas,
-using market and sector factors, Student-t innovations, quarterly filing dates,
-persistent fundamentals and weak latent alpha. The saved distribution checks in
-[the real profile](reports/real/data_profile.json) and
-[the synthetic profile](reports/synthetic/data_profile.json) show the approximation;
-synthetic data does not reproduce historical crisis tails.
+The synthetic sample has the same file schemas, with market and sector factors,
+Student-t returns and quarterly filings. The [data profile](docs/DATA_PROFILE.md)
+describes the observed distributions.
 
 ## Method
 
-Value, momentum, quality, low volatility, size, beta and liquidity are winsorized,
-standardized, neutralized and ranked within each date. Positive book-to-price is
-required for value. Sector and beta exposures are removed before ranking; beta
-itself is only sector-neutralized, since regressing it on itself would leave
-numerical noise. The benchmark is the mean of the seven centered ranks.
+The study compares an equal-weight composite of value, momentum, quality, low
+volatility, size, beta and liquidity with ridge, histogram boosting and a small
+neural network. Factors are winsorized and neutralized against sector and beta
+before ranking; beta itself is only sector-neutralized. Rolling windows contain
+504 training dates, a 21-date purge and 63 test dates.
 
-The target is stock total return minus compounded SPY return over the next 21
-trading days, excluding the signal day. Rolling windows contain 504 training days,
-a 21-day purge and 63 test days; test windows are contiguous. Ridge, histogram
-gradient boosting and a small ReLU network use the settings fixed in
-[the experiment protocol](docs/EXPERIMENT.md).
+Signals use close t, execute at close t+1 and predict excess returns from t+1 to
+t+22. Each side of the quintile book receives exposure equal to NAV before costs,
+and shares are held for 21 trading dates. Costs are 5 bp per dollar traded,
+including entry and final liquidation. The neural model uses mini-batches, a
+standardized target and early stopping on the purged final 20% of each training
+window. The [configuration](docs/EXPERIMENT.md) specifies all model, execution,
+size-control and bootstrap settings.
 
-At each rebalance the top and bottom quintiles receive long and short exposure
-equal to the pre-trade NAV on each side. Shares are held for 21 trading days and
-marked daily. Costs are 5 bp per dollar traded against drifted holdings, including
-initial entry and final liquidation. Returns compound daily and Sharpe uses daily
-net P&L. The signal-close execution assumption is idealized. Linear factor
-neutralization does not guarantee beta or sector neutrality of the quantile book.
+## Results
 
-IC summaries and their t-statistics use non-overlapping target-horizon signal dates.
-Factor diagnostics include raw and neutralized IC, decay at 1, 5, 10, 21 and 63 days,
-and daily returns of each factor's quintile spread. The annual IC chart averages
-daily IC with overlapping targets and is descriptive, without daily-sample t-tests.
+Out-of-sample signals span 2014-08-13 through 2026-08-21. The intervals below use
+2,000 moving-block bootstrap draws with 63-date blocks. Four forecasts and seven
+factors were tested, plus five execution/size variants; intervals are pointwise
+and are not adjusted for multiple comparisons.
 
-## Real-data results
-
-Out-of-sample signals run from 2014-08-13 through 2026-08-21.
-The table is generated from [saved metrics](reports/real/metrics.csv); run parameters,
-dependency versions and the source commit are in [run.json](reports/real/run.json).
-
-| Forecast | Monthly rank IC | Net annual return | Daily net Sharpe | Max drawdown | Annual one-way turnover per side |
+| Forecast | Monthly rank IC | Net annual return | Net Sharpe | Sharpe 95% interval | Max drawdown |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Equal-weight composite | 0.0012 | -0.2% | 0.03 | -33.7% | 3.77x |
-| Ridge | 0.0156 | 9.1% | 0.71 | -22.2% | 2.98x |
-| Gradient boosting | 0.0107 | 5.6% | 0.49 | -23.4% | 4.45x |
-| Neural network | 0.0009 | 1.1% | 0.18 | -28.7% | 4.75x |
+| Equal-weight composite | 0.0038 | -0.3% | 0.02 | [-0.44, 0.57] | -31.5% |
+| Ridge | 0.0161 | 9.6% | 0.74 | [0.31, 1.41] | -22.0% |
+| Gradient boosting | 0.0118 | 7.1% | 0.59 | [0.18, 1.27] | -24.1% |
+| Neural network | 0.0076 | 6.8% | 0.59 | [0.15, 1.16] | -17.4% |
 
-The largest absolute monthly rank IC t-statistic across forecasts is
-1.45. The estimates remain subject to sampling uncertainty and the
-limitations below. Model IC t-statistics and factor-level results appear in
-[the result notes](docs/RESULTS.md), alongside the data rebuild comparison.
+Ridge's Sharpe is 0.69 with same-close execution, 0.30 with size-neutralized
+features, 0.29 with a cap-neutral book, and 0.28 with both size controls. The
+neural model has no consistent advantage after controls. The
+[results notes](docs/RESULTS.md) report all comparisons, factor attribution and
+training diagnostics; [saved metrics](reports/real/metrics.csv) and
+[run metadata](reports/real/run.json) contain the numerical outputs and provenance.
 
-![Cumulative out-of-sample net long-short return](reports/real/equity_curve.png)
+![Next-close net long-short returns](reports/real/equity_curve.png)
 
-![Rank IC by year](reports/real/ic_by_year.png)
-
-[The synthetic run](reports/synthetic/research_report.md) uses the same model and
-walk-forward settings to exercise the data handling and portfolio accounting.
+![Ridge returns with size controls](reports/real/size_controls.png)
 
 ## Limitations
 
-Current-constituent survivorship, imperfect XBRL concept matching, revised vendor
-prices, idealized close execution, unmodeled borrow and financing costs, and a
-single fixed universe limit the economic interpretation of the backtest.
+Current-constituent survivorship, current sector classifications, XBRL concept
+matching and vendor revisions limit the historical data. Next-close execution
+still assumes fills at the closing price; financing and borrow costs are excluded.
+Size constraints use signal-date information and can drift between rebalances.
+The robustness tests reuse the same evaluated period, rather than a new
+confirmatory sample.
 
 ## Reproduce
 
-Create and activate a Python virtual environment, then install and check the package:
+Install the optional neural dependencies for the full four-forecast experiment:
 
 ```bash
-pip install -e ".[dev,data]"
+pip install -e ".[dev,data,neural]"
 ruff check .
 pytest -q
-```
-
-Rebuild the market panel (set `SEC_USER_AGENT` to a suitable name and contact
-before downloading), then run the real experiment:
-
-```bash
 equity-alpha build-data --out data/real
-equity-alpha run --panel data/real/panel.parquet --output-dir reports/real
-equity-alpha profile-data --panel data/real/panel.parquet --out reports/real/data_profile.json
+equity-alpha run --panel data/real/panel.parquet --output-dir reports/real --include-neural
 ```
 
-The universe and provider responses can change. The committed report describes the
-recorded snapshot, and a fresh download need not reproduce it bit for bit. To compare
-against a local snapshot, rebuild into a separate directory and run
-`scripts/check_rebuild.py` with `--reference`, `--rebuilt` and `--out` paths.
-
-No vendor access is needed for a synthetic run. The default generator is a small
-sample; the saved synthetic report uses a longer history:
+Set `SEC_USER_AGENT` to a name and contact before building data. For a run without
+vendor access:
 
 ```bash
 equity-alpha sample-data --out data/synthetic --days 2016
-equity-alpha run --panel data/synthetic/panel.parquet --output-dir reports/synthetic
-equity-alpha profile-data --panel data/synthetic/panel.parquet \
-  --out reports/synthetic/data_profile.json
-python scripts/write_readme.py
-python scripts/write_result_notes.py
-python scripts/write_data_profile.py
-python scripts/render_figures.py reports/real reports/synthetic
+equity-alpha run --panel data/synthetic/panel.parquet --output-dir reports/synthetic --include-neural
 ```
 
-Without `--panel`, `equity-alpha run` generates the default synthetic panel in memory.
-Use `--no-include-neural` for a faster run. CI generates synthetic data and runs the
-same parquet-loading path; the real-schema check is skipped when private data is absent.
-Reports contain aggregate tables and figures.
+Omit the `neural` extra and `--include-neural` flag for the three-forecast version.
+Provider responses and current constituents can change between downloads. CI
+checks both the base installation and the neural extra with a CPU build of PyTorch.

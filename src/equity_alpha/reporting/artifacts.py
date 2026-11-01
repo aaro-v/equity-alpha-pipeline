@@ -64,6 +64,7 @@ def write_artifacts(
     _plot_curves(curves, output_dir)
     _plot_ic(correlations, output_dir)
     _plot_decay(factor_decay, output_dir)
+    _plot_size_controls(curves, output_dir)
     report = output_dir / "research_report.md"
     report.write_text(
         "# Walk-forward research results\n\n"
@@ -71,7 +72,8 @@ def write_artifacts(
         f"Test signals: {metadata['test_start']} through {metadata['test_end']}.\n\n"
         "The main portfolio executes at the next close. IC summaries use non-overlapping "
         "signal dates; Sharpe uses daily net returns. Its 95% percentile intervals use "
-        "moving blocks and are pointwise. Four forecasts and seven factors are tested, "
+        "moving blocks and are pointwise. "
+        f"{metadata['multiple_comparisons']['forecasts']} forecasts and seven factors are tested, "
         "plus the execution and size-control variants; intervals are not adjusted for "
         "multiple comparisons. Intervals require at least two blocks of daily observations. "
         "The book holds shares between rebalances and pays costs on actual traded dollars, "
@@ -93,7 +95,8 @@ def write_artifacts(
         )
         + "\n\n![Cumulative net return](equity_curve.png)\n\n"
         "![Annual rank IC](ic_by_year.png)\n\n"
-        "![Factor IC decay](factor_decay.png)\n",
+        "![Factor IC decay](factor_decay.png)\n\n"
+        "![Size controls](size_controls.png)\n",
         encoding="utf-8",
     )
     return report
@@ -158,9 +161,31 @@ def _plot_decay(decay: pd.DataFrame, out: Path) -> None:
 
 
 def render_figures(output_dir: Path) -> None:
-    """Regenerate the three figures from saved aggregate tables without vendor access."""
+    """Regenerate report figures from aggregate tables without vendor access."""
     curves = pd.read_csv(output_dir / "portfolio_returns.csv", parse_dates=["date"])
     correlations = pd.read_csv(output_dir / "ic_series.csv", parse_dates=["date"])
     _plot_curves(curves, output_dir)
     _plot_ic(correlations, output_dir)
     _plot_decay(pd.read_csv(output_dir / "factor_decay.csv"), output_dir)
+    _plot_size_controls(curves, output_dir)
+
+
+def _plot_size_controls(curves: pd.DataFrame, out: Path) -> None:
+    labels = {
+        "main": "Next close",
+        "size_neutral_features": "Size-neutral features",
+        "cap_neutral_book": "Cap-neutral book",
+        "size_neutral": "Both size controls",
+    }
+    fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
+    ridge = curves.loc[curves["model"].eq("ridge")]
+    for variant, label in labels.items():
+        frame = ridge.loc[ridge["variant"].eq(variant)].sort_values("date")
+        if not frame.empty:
+            ax.plot(frame["date"], frame["wealth"] - 1, label=label)
+    ax.axhline(0, color="gray", linewidth=0.7)
+    ax.set(xlabel="Date", ylabel="Cumulative net return", title="Ridge: size controls")
+    ax.legend(frameon=False, ncol=2)
+    ax.grid(alpha=0.15)
+    fig.savefig(out / "size_controls.png", dpi=150)
+    plt.close(fig)

@@ -45,17 +45,18 @@ Factor statistics use out-of-sample signals from 2014-08-13 through
 2026-08-21, a subset of the panel period. They match
 `reports/real/factor_ics.csv` and the results report. Rank IC uses the centered
 neutralized factor ranks against the next 21 trading
-days' excess return, sampled on non-overlapping signal dates.
+days' excess return after the execution close, sampled on non-overlapping signal
+dates. Execution follows the signal by 1 trading day(s).
 
 | Factor | Mean rank IC | IC standard deviation | IC t-statistic | Observations |
 | --- | ---: | ---: | ---: | ---: |
-| value | -0.0118 | 0.1141 | -1.24 | 144 |
-| momentum | 0.0047 | 0.1359 | 0.41 | 144 |
-| quality | -0.0075 | 0.0760 | -1.18 | 144 |
-| low_volatility | -0.0072 | 0.0939 | -0.92 | 144 |
-| size | 0.0247 | 0.0946 | 3.14 | 144 |
-| beta | 0.0156 | 0.1716 | 1.09 | 144 |
-| liquidity | -0.0209 | 0.0887 | -2.83 | 144 |
+| value | -0.0108 | 0.1129 | -1.15 | 144 |
+| momentum | 0.0050 | 0.1332 | 0.45 | 144 |
+| quality | -0.0079 | 0.0756 | -1.26 | 144 |
+| low_volatility | -0.0065 | 0.0907 | -0.86 | 144 |
+| size | 0.0241 | 0.0922 | 3.13 | 144 |
+| beta | 0.0184 | 0.1686 | 1.31 | 144 |
+| liquidity | -0.0190 | 0.0868 | -2.63 | 144 |
 
 The universe is selected from current constituents and therefore contains
 survivorship bias. Beta is sector-neutralized; the other factors are neutralized
