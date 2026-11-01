@@ -1,13 +1,12 @@
-# Cross-sectional equity alpha
+# Factor exposure vs. forecasting skill in cross-sectional equity models
 
-The strongest observed portfolio result is tied to familiar factor exposures,
-including a material size tilt. Ridge achieves a next-close net Sharpe of 0.74;
-seven factor portfolios explain 59% of its daily return variance, and its
-factor-adjusted Sharpe is -0.21. A log-market-cap-neutral book reduces its Sharpe
-to 0.29, with a 95% moving-block bootstrap interval of [-0.17, 0.91]. Historical
-size effects in this current-constituent universe are vulnerable to survivorship
-bias, and the tests provide limited evidence of additional alpha after factor
-controls.
+Can machine-learning models add value beyond standard equity factors? On a
+point-in-time S&P 500 panel, with a 2014–2026 test period, next-day execution and
+5 bp costs, ridge reaches a 0.74 net Sharpe. Most of it is factor exposure: seven
+factor portfolios explain 59% of its daily variance, and its factor-adjusted
+Sharpe is −0.21. Neutralising size cuts its Sharpe to 0.29, with a 95% bootstrap
+interval of [−0.17, 0.91]. Because the universe is today's index members, that
+size effect is likely inflated by survivorship bias.
 
 ## Data
 
