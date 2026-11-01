@@ -131,13 +131,20 @@ def _git(*args: str) -> str:
 
 
 def _metadata(config: PipelineConfig, panel: pd.DataFrame, predictions: pd.DataFrame) -> dict:
+    parameters = asdict(config)
+    if config.panel_path is not None:
+        parameters.pop("sample_data")
+        parameters["panel_path"] = config.panel_path.as_posix()
     return {
-        "parameters": asdict(config),
-        "data_source": str(config.panel_path) if config.panel_path else "synthetic (generated)",
+        "parameters": parameters,
+        "data_source": config.panel_path.as_posix()
+        if config.panel_path
+        else "synthetic (generated)",
         "panel_start": str(panel["date"].min().date()),
         "panel_end": str(panel["date"].max().date()),
         "panel_rows": len(panel),
         "panel_assets": panel["asset"].nunique(),
+        "panel_trading_days": panel["date"].nunique(),
         "test_start": str(predictions["date"].min().date()),
         "test_end": str(predictions["date"].max().date()),
         "test_assets": predictions["asset"].nunique(),

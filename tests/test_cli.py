@@ -55,7 +55,9 @@ def test_cli_loads_parquet_and_records_source(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.exception
     assert (reports / "research_report.md").exists()
     metadata = json.loads((reports / "run.json").read_text())
-    assert metadata["data_source"] == str(data / "panel.parquet")
+    assert metadata["data_source"] == (data / "panel.parquet").as_posix()
+    assert "sample_data" not in metadata["parameters"]
+    assert metadata["panel_trading_days"] == 400
     assert metadata["parameters"]["horizon"] == 10
     assert set(pd.read_csv(reports / "metrics.csv")["model"]) == {"composite", "ridge", "tree"}
     assert not list(reports.glob("*.parquet"))

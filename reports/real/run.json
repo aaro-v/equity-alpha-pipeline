@@ -1,11 +1,5 @@
 {
   "parameters": {
-    "sample_data": {
-      "n_assets": 100,
-      "n_days": 756,
-      "start": "2018-01-02",
-      "seed": 7
-    },
     "walk_forward": {
       "train_days": 504,
       "test_days": 63,
@@ -19,9 +13,9 @@
     },
     "horizon": 21,
     "cost_bps": 5.0,
-    "panel_path": "data\\real\\panel.parquet"
+    "panel_path": "data/real/panel.parquet"
   },
-  "data_source": "data\\real\\panel.parquet",
+  "data_source": "data/real/panel.parquet",
   "panel_start": "2012-01-03",
   "panel_end": "2026-10-30",
   "panel_rows": 1391906,
@@ -42,5 +36,6 @@
     "pyarrow": "26.0.0"
   },
   "portfolio_convention": "long 100%, short 100%; shares held; close execution; final liquidation",
-  "ic_convention": "non-overlapping target-horizon signal dates; daily series descriptive"
+  "ic_convention": "non-overlapping target-horizon signal dates; daily series descriptive",
+  "panel_trading_days": 3729
 }
