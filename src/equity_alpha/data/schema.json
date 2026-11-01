@@ -1,0 +1,45 @@
+{
+  "fundamentals_quarterly.parquet": {
+    "asset": "large_string",
+    "field": "string",
+    "period_end": "timestamp[us]",
+    "value": "double",
+    "filed": "timestamp[us]"
+  },
+  "panel.parquet": {
+    "date": "timestamp[us]",
+    "asset": "category",
+    "sector": "category",
+    "price": "float",
+    "daily_return": "float",
+    "benchmark_return": "float",
+    "market_cap": "float",
+    "dollar_volume": "float",
+    "book_to_price": "float",
+    "gross_margin": "float",
+    "accruals": "float",
+    "debt_to_equity": "float",
+    "fundamentals_available_date": "timestamp[ns]"
+  },
+  "prices_daily.parquet": {
+    "date": "timestamp[us]",
+    "asset": "category",
+    "close": "float",
+    "adj_close": "float",
+    "volume": "double"
+  },
+  "universe.csv": [
+    "asset",
+    "yahoo_symbol",
+    "name",
+    "sector",
+    "sub_industry",
+    "cik",
+    "date_added",
+    "status",
+    "first_price_date",
+    "panel_rows",
+    "rows_with_all_fundamentals",
+    "first_full_fundamentals_date"
+  ]
+}

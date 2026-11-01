@@ -7,10 +7,10 @@ import pandas as pd
 
 @dataclass(frozen=True)
 class WalkForwardConfig:
-    train_days: int = 252
+    train_days: int = 504
     test_days: int = 63
     purge_days: int = 21
-    embargo_days: int = 5
+    embargo_days: int = 0
 
 
 @dataclass(frozen=True)

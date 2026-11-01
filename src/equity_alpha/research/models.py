@@ -34,6 +34,7 @@ def predict_baselines(
     x_test = test.loc[:, feature_columns].to_numpy(dtype=float)
 
     predictions = test[["date", "asset", "sector", "label", "future_return"]].copy()
+    predictions["composite"] = test.loc[:, feature_columns].mean(axis=1)
     predictions["ridge"] = _ridge_predictions(x_train, y_train, x_test)
     predictions["tree"] = _tree_predictions(x_train, y_train, x_test, config.seed)
     if config.include_neural:
@@ -81,6 +82,7 @@ def _neural_predictions(
     from torch import nn
 
     torch.manual_seed(seed)
+    torch.set_num_threads(4)
     scaler = StandardScaler()
     x_train_scaled = scaler.fit_transform(x_train)
     x_test_scaled = scaler.transform(x_test)

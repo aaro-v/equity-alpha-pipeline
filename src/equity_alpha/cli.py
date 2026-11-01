@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Annotated
 
 import typer
 
-from equity_alpha.data import SampleDataConfig, generate_sample_panel
+from equity_alpha.data import SampleDataConfig
+from equity_alpha.data.synthetic import write_sample_data
 from equity_alpha.research.models import ModelConfig
 from equity_alpha.validation import WalkForwardConfig
 from equity_alpha.workflow.pipeline import PipelineConfig, run_research_pipeline
@@ -22,73 +24,77 @@ def version() -> None:
 
 
 @app.command()
-def sample_data(
-    output: Annotated[Path, typer.Option(help="Output parquet path.")] = Path(
-        "data/cache/sample_panel.parquet"
-    ),
-    assets: Annotated[int, typer.Option(min=10, help="Number of synthetic assets.")] = 90,
-    days: Annotated[int, typer.Option(min=180, help="Number of business days.")] = 640,
-    seed: Annotated[int, typer.Option(help="Deterministic random seed.")] = 7,
+def build_data(
+    out: Annotated[Path, typer.Option(help="Private data output directory.")] = Path("data/real"),
+    limit: Annotated[
+        int | None, typer.Option(min=1, help="Limit universe for a spot check.")
+    ] = None,
 ) -> None:
-    """Generate deterministic synthetic point-in-time sample data."""
+    """Rebuild real market data from Yahoo, SEC EDGAR and Wikipedia (requires [data])."""
+    from equity_alpha.data.market_data.build import build
 
-    panel = generate_sample_panel(SampleDataConfig(n_assets=assets, n_days=days, seed=seed))
-    output.parent.mkdir(parents=True, exist_ok=True)
-    panel.to_parquet(output, index=False)
-    typer.echo(f"Wrote {len(panel):,} rows to {output}")
+    build(out, limit=limit)
+
+
+@app.command()
+def sample_data(
+    out: Annotated[Path, typer.Option(help="Output directory for the four sample files.")] = Path(
+        "data/synthetic"
+    ),
+    assets: Annotated[int, typer.Option(min=10)] = 100,
+    days: Annotated[int, typer.Option(min=180)] = 756,
+    seed: Annotated[int, typer.Option()] = 7,
+) -> None:
+    """Generate a deterministic synthetic dataset with the real builder's schema."""
+    write_sample_data(out, SampleDataConfig(n_assets=assets, n_days=days, seed=seed))
+    typer.echo(f"Wrote synthetic dataset to {out}")
+
+
+@app.command()
+def profile_data(
+    panel: Annotated[Path, typer.Option(exists=True, dir_okay=False)],
+    out: Annotated[Path, typer.Option()] = Path("reports/synthetic/data_profile.json"),
+) -> None:
+    """Save aggregate market and fundamentals distributions."""
+    from equity_alpha.data.profile import write_profile
+
+    write_profile(panel, out)
+    typer.echo(f"Profile: {out}")
 
 
 @app.command()
 def run(
-    output_dir: Annotated[Path, typer.Option(help="Artifact output directory.")] = Path(
-        "reports/generated"
+    output_dir: Annotated[Path, typer.Option(help="Aggregate report output directory.")] = Path(
+        "reports/synthetic"
     ),
-    assets: Annotated[int, typer.Option(min=20, help="Number of synthetic assets.")] = 90,
-    days: Annotated[int, typer.Option(min=180, help="Number of business days.")] = 640,
-    seed: Annotated[int, typer.Option(help="Deterministic random seed.")] = 7,
-    horizon: Annotated[
-        int, typer.Option(min=1, help="Forward-return horizon in business days.")
-    ] = 21,
-    cost_bps: Annotated[
-        float, typer.Option(min=0.0, help="One-way transaction cost in basis points.")
-    ] = 5.0,
-    train_days: Annotated[
-        int, typer.Option(min=20, help="Training window length in business days.")
-    ] = 252,
-    test_days: Annotated[
-        int, typer.Option(min=5, help="Test window length in business days.")
-    ] = 63,
-    purge_days: Annotated[
-        int, typer.Option(min=0, help="Gap between each training and test window.")
-    ] = 21,
-    embargo_days: Annotated[
-        int, typer.Option(min=0, help="Gap after each test window before the next fold.")
-    ] = 5,
-    include_neural: Annotated[
-        bool, typer.Option(help="Fit the small PyTorch neural baseline.")
-    ] = True,
-    neural_epochs: Annotated[
-        int, typer.Option(min=1, help="Training epochs for the neural baseline.")
-    ] = 25,
+    panel: Annotated[Path | None, typer.Option(exists=True, dir_okay=False)] = None,
+    assets: Annotated[int, typer.Option(min=20)] = 100,
+    days: Annotated[int, typer.Option(min=180)] = 756,
+    seed: Annotated[int, typer.Option()] = 7,
+    horizon: Annotated[int, typer.Option(min=1)] = 21,
+    cost_bps: Annotated[float, typer.Option(min=0.0)] = 5.0,
+    train_days: Annotated[int, typer.Option(min=20)] = 504,
+    test_days: Annotated[int, typer.Option(min=5)] = 63,
+    purge_days: Annotated[int, typer.Option(min=0)] = 21,
+    embargo_days: Annotated[int, typer.Option(min=0)] = 0,
+    include_neural: Annotated[bool, typer.Option()] = True,
+    neural_epochs: Annotated[int, typer.Option(min=1)] = 25,
 ) -> None:
-    """Run the full deterministic cross-sectional alpha research pipeline."""
-
+    """Run purged walk-forward forecasts and daily marked-to-market portfolios."""
+    if purge_days < horizon:
+        raise typer.BadParameter("purge_days must be at least horizon", param_hint="--purge-days")
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     config = PipelineConfig(
         sample_data=SampleDataConfig(n_assets=assets, n_days=days, seed=seed),
-        walk_forward=WalkForwardConfig(
-            train_days=train_days,
-            test_days=test_days,
-            purge_days=purge_days,
-            embargo_days=embargo_days,
-        ),
+        walk_forward=WalkForwardConfig(train_days, test_days, purge_days, embargo_days),
         models=ModelConfig(include_neural=include_neural, neural_epochs=neural_epochs),
         horizon=horizon,
         cost_bps=cost_bps,
+        panel_path=panel,
     )
     result = run_research_pipeline(config, output_dir=output_dir)
     typer.echo(result.metrics.to_string(index=False))
-    if result.report_path is not None:
-        typer.echo(f"\nReport: {result.report_path}")
+    typer.echo(f"Report: {result.report_path}")
 
 
 if __name__ == "__main__":

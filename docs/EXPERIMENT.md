@@ -19,6 +19,10 @@ for 25 full-batch Adam epochs with learning rate 0.01 and weight decay 0.001.
 Use model seed 17 and synthetic seed 7. Compare all three with an equal-weight
 mean of the seven centered factor ranks.
 
+The synthetic reporting run uses 100 assets and 2,016 business days so its
+out-of-sample summaries cover multiple years; the default sample remains 756
+days for quick local use.
+
 Winsorize factors at each date's 1st and 99th percentiles, then remove sector
 and beta exposures using the available observations. For the beta factor itself,
 remove sector only: regressing beta on itself would produce numerical noise.
