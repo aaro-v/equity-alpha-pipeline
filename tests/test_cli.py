@@ -66,7 +66,7 @@ def test_cli_loads_parquet_and_records_source(tmp_path: Path) -> None:
 def test_cli_rejects_insufficient_purge() -> None:
     result = CliRunner().invoke(app, ["run", "--horizon", "22"])
     assert result.exit_code != 0
-    assert "purge_days must be at least horizon" in result.stdout + result.stderr
+    assert "purge_days must cover horizon" in result.stdout + result.stderr
 
 
 def test_build_data_calls_builder_without_network(monkeypatch, tmp_path: Path) -> None:

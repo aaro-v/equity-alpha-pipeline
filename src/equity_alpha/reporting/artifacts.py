@@ -24,13 +24,21 @@ def write_artifacts(
     coverage_by_date: pd.DataFrame,
     folds: pd.DataFrame,
     metadata: dict,
+    attribution: pd.DataFrame,
+    loadings: pd.DataFrame,
+    neural_training: pd.DataFrame,
 ) -> Path:
     """Write aggregate research results; never persist asset-level vendor observations."""
     output_dir.mkdir(parents=True, exist_ok=True)
     horizon = metadata["parameters"]["horizon"]
-    curves = portfolio_returns.copy().sort_values(["model", "date"])
-    curves["wealth"] = curves.groupby("model")["net_return"].transform(lambda r: (1 + r).cumprod())
-    curves["drawdown"] = curves.groupby("model")["net_return"].transform(drawdown_series)
+    curves = portfolio_returns.copy().sort_values(["variant", "model", "date"])
+    groups = curves.groupby(["variant", "model"])["net_return"]
+    curves["wealth"] = groups.transform(lambda r: (1 + r).cumprod())
+    curves["drawdown"] = groups.transform(drawdown_series)
+    if neural_training.empty:
+        neural_training = pd.DataFrame(
+            columns=["variant", "fold", "epochs_run", "best_epoch", "optimizer_updates"]
+        )
     tables = {
         "metrics": metrics,
         "portfolio_returns": curves,
@@ -38,12 +46,17 @@ def write_artifacts(
         "factor_ics": factor_decay.loc[factor_decay["horizon"].eq(horizon)],
         "factor_decay": factor_decay,
         "quintile_spreads": factor_spreads,
-        "turnover": curves[["date", "model", "turnover", "rebalance"]],
-        "drawdown": curves[["date", "model", "drawdown"]],
+        "turnover": curves[
+            ["date", "variant", "model", "turnover", "rebalance", "rebalance_size_exposure"]
+        ],
+        "drawdown": curves[["date", "variant", "model", "drawdown"]],
         "sector_attribution": sector_attribution,
         "feature_coverage": coverage,
         "feature_coverage_by_date": coverage_by_date,
         "fold_summary": folds,
+        "factor_attribution": attribution,
+        "factor_loadings": loadings,
+        "neural_training": neural_training,
     }
     for name, frame in tables.items():
         frame.to_csv(output_dir / f"{name}.csv", index=False, float_format="%.10g")
@@ -56,7 +69,11 @@ def write_artifacts(
         "# Walk-forward research results\n\n"
         f"Source: `{metadata['data_source']}`. "
         f"Test signals: {metadata['test_start']} through {metadata['test_end']}.\n\n"
-        "IC summaries use non-overlapping signal dates; Sharpe uses daily net returns. "
+        "The main portfolio executes at the next close. IC summaries use non-overlapping "
+        "signal dates; Sharpe uses daily net returns. Its 95% percentile intervals use "
+        "moving blocks and are pointwise. Four forecasts and seven factors are tested, "
+        "plus the execution and size-control variants; intervals are not adjusted for "
+        "multiple comparisons. Intervals require at least two blocks of daily observations. "
         "The book holds shares between rebalances and pays costs on actual traded dollars, "
         "including entry and final liquidation. Sector contributions sum arithmetic daily "
         "net returns and do not add to compounded total return.\n\n"
@@ -64,8 +81,11 @@ def write_artifacts(
             metrics,
             [
                 "model",
+                "variant",
                 "mean_rank_ic",
                 "cost_adjusted_sharpe",
+                "sharpe_ci_lower",
+                "sharpe_ci_upper",
                 "portfolio_return",
                 "max_drawdown",
                 "annual_one_way_turnover_per_side",
@@ -89,6 +109,7 @@ def markdown_table(frame: pd.DataFrame, columns: list[str]) -> str:
 
 
 def _plot_curves(curves: pd.DataFrame, out: Path) -> None:
+    curves = curves.loc[curves["variant"].eq("main")]
     fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
     for model, frame in curves.groupby("model", sort=False):
         ax.plot(frame["date"], frame["wealth"] - 1, label=model, linewidth=1.4)

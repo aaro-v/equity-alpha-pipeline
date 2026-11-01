@@ -17,13 +17,16 @@ def factor_diagnostics(
     test_dates: pd.Series,
     horizon: int,
     cost_bps: float,
+    execution_lag: int = 1,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Factor IC decay and investable quintile spreads restricted to test signal dates."""
     test = research.loc[research["date"].isin(test_dates)]
     calendar = pd.DatetimeIndex(sorted(panel["date"].unique()))
     rows, spreads = [], []
     for h in sorted({1, 5, 10, 21, 63, horizon}):
-        labels = forward_returns(panel, h)[["date", "asset", "label", "future_return"]]
+        labels = forward_returns(panel, h, execution_lag)[
+            ["date", "asset", "label", "future_return"]
+        ]
         selected = nonoverlapping_dates(test["date"], calendar, h)
         sample = test.loc[test["date"].isin(selected)].drop(columns=["label", "future_return"])
         sample = sample.merge(labels, on=["date", "asset"]).dropna(subset=["label"])
@@ -51,10 +54,13 @@ def factor_diagnostics(
                         "share_positive": (rank > 0).mean(),
                     }
                 )
-    for factor, column in zip(RAW_FEATURES, FEATURE_COLUMNS, strict=True):
-        predictions = test[["date", "asset", "sector", "label", "future_return", column]]
-        portfolio, _ = portfolio_returns(predictions, panel, column, cost_bps, 0.2, horizon)
-        spreads.append(portfolio.assign(factor=factor))
+    for lag in sorted({0, execution_lag}):
+        for factor, column in zip(RAW_FEATURES, FEATURE_COLUMNS, strict=True):
+            predictions = test[["date", "asset", "sector", "label", "future_return", column]]
+            portfolio, _ = portfolio_returns(
+                predictions, panel, column, cost_bps, 0.2, horizon, lag
+            )
+            spreads.append(portfolio.assign(factor=factor, execution_lag=lag))
     return pd.DataFrame(rows), pd.concat(spreads, ignore_index=True)
 
 

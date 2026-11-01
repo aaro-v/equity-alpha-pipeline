@@ -19,13 +19,13 @@ def test_artifacts_reconcile_to_portfolio_and_save_no_asset_rows(tmp_path: Path)
         models=ModelConfig(include_neural=False),
     )
     result = run_research_pipeline(config, tmp_path)
-    metrics = pd.read_csv(tmp_path / "metrics.csv").set_index("model")
+    metrics = pd.read_csv(tmp_path / "metrics.csv").set_index(["variant", "model"])
     daily = pd.read_csv(tmp_path / "portfolio_returns.csv")
-    for model, frame in daily.groupby("model"):
-        assert metrics.loc[model, "portfolio_return"] == pytest.approx(
+    for key, frame in daily.groupby(["variant", "model"]):
+        assert metrics.loc[key, "portfolio_return"] == pytest.approx(
             (1 + frame["net_return"]).prod() - 1
         )
-        assert frame["wealth"].iloc[-1] - 1 == pytest.approx(metrics.loc[model, "portfolio_return"])
+        assert frame["wealth"].iloc[-1] - 1 == pytest.approx(metrics.loc[key, "portfolio_return"])
     for path in tmp_path.glob("*.csv"):
         assert "asset" not in pd.read_csv(path).columns
     assert result.report_path.exists()

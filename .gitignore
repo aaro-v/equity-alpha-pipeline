@@ -3,15 +3,10 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
-.mypy_cache/
 .ipynb_checkpoints/
-data/raw/
-data/cache/
 data/real/
 data/synthetic/
 .cache/
-reports/checks/
-reports/generated/*
 dist/
 build/
 *.egg-info/

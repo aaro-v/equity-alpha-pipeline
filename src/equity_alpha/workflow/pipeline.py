@@ -14,8 +14,9 @@ from equity_alpha.data import SampleDataConfig, generate_sample_panel
 from equity_alpha.portfolio import evaluate_predictions
 from equity_alpha.portfolio.construction import ic_series
 from equity_alpha.reporting.artifacts import write_artifacts
+from equity_alpha.research.attribution import factor_attribution
 from equity_alpha.research.diagnostics import factor_diagnostics, feature_coverage
-from equity_alpha.research.features import build_research_frame
+from equity_alpha.research.features import build_research_frame, forward_returns
 from equity_alpha.research.models import ModelConfig, predict_baselines, validate_model_config
 from equity_alpha.validation import WalkForwardConfig, make_walk_forward_splits
 
@@ -30,14 +31,20 @@ class PipelineConfig:
     horizon: int = 21
     cost_bps: float = 5.0
     panel_path: Path | None = None
+    execution_lag: int = 1
+    robustness: bool = True
+    bootstrap_samples: int = 2000
+    bootstrap_block_days: int = 63
 
     def __post_init__(self) -> None:
-        if self.horizon <= 0:
-            raise ValueError("horizon must be positive")
+        if self.horizon <= 0 or self.execution_lag < 0:
+            raise ValueError("horizon must be positive and execution_lag non-negative")
         if self.cost_bps < 0:
             raise ValueError("cost_bps must be non-negative")
-        if self.walk_forward.purge_days < self.horizon:
-            raise ValueError("purge_days must be at least horizon")
+        if self.walk_forward.purge_days < max(self.horizon, self.horizon + self.execution_lag - 1):
+            raise ValueError("purge_days must be at least horizon + execution_lag - 1 and horizon")
+        if self.bootstrap_samples < 1 or self.bootstrap_block_days < 1:
+            raise ValueError("bootstrap samples and block days must be positive")
         validate_model_config(self.models)
 
 
@@ -50,38 +57,41 @@ class PipelineResult:
     report_path: Path | None = None
 
 
-def run_research_pipeline(
-    config: PipelineConfig | None = None, output_dir: Path | None = None
-) -> PipelineResult:
-    """Run one frozen configuration on a parquet panel or a generated sample."""
-    config = config or PipelineConfig()
-    panel = (
-        pd.read_parquet(config.panel_path)
-        if config.panel_path
-        else generate_sample_panel(config.sample_data)
-    )
-    panel["asset"] = panel["asset"].astype(str)
-    panel["sector"] = panel["sector"].astype(str)
-    logger.info("Building features for %s rows", f"{len(panel):,}")
-    research = build_research_frame(panel, horizon=config.horizon)
+def _fit_folds(research, panel, config, variant, training_log):
     splits = make_walk_forward_splits(research["date"], config.walk_forward)
     if not splits:
         raise ValueError("not enough dates for the requested walk-forward configuration")
-    fold_predictions, folds = [], []
+    calendar = pd.DatetimeIndex(sorted(panel["date"].unique()))
+    predictions, folds = [], []
     for split in splits:
+        if calendar.get_loc(
+            split.train_dates[-1]
+        ) + config.horizon + config.execution_lag > calendar.get_loc(split.test_dates[0]):
+            raise ValueError("a training label ends after the test signal close")
         train = research.loc[research["date"].isin(split.train_dates)]
         test = research.loc[research["date"].isin(split.test_dates)]
         logger.info(
-            "Fold %s: %s to %s",
+            "%s fold %s: %s to %s",
+            variant,
             split.fold,
             split.test_dates.min().date(),
             split.test_dates.max().date(),
         )
+        logs = []
         with threadpool_limits(limits=4):
-            predictions = predict_baselines(train, test, config=config.models)
-        fold_predictions.append(predictions.assign(fold=split.fold))
+            prediction = predict_baselines(
+                train,
+                test,
+                config=config.models,
+                horizon=config.horizon,
+                execution_lag=config.execution_lag,
+                training_log=logs,
+            )
+        predictions.append(prediction.assign(fold=split.fold))
+        training_log.extend(dict(row, variant=variant, fold=split.fold) for row in logs)
         folds.append(
             {
+                "variant": variant,
                 "fold": split.fold,
                 "train_start": split.train_dates.min(),
                 "train_end": split.train_dates.max(),
@@ -92,35 +102,101 @@ def run_research_pipeline(
                 "test_assets": test["asset"].nunique(),
             }
         )
-    all_predictions = pd.concat(fold_predictions, ignore_index=True)
-    logger.info("Evaluating daily portfolios")
-    metrics, portfolios, sectors = evaluate_predictions(
-        all_predictions, panel, cost_bps=config.cost_bps, holding_period_days=config.horizon
+    return pd.concat(predictions, ignore_index=True), pd.DataFrame(folds)
+
+
+def run_research_pipeline(
+    config: PipelineConfig | None = None, output_dir: Path | None = None
+) -> PipelineResult:
+    """Run purged forecasts, execution comparisons and size-controlled portfolios."""
+    config = config or PipelineConfig()
+    panel = (
+        pd.read_parquet(config.panel_path)
+        if config.panel_path
+        else generate_sample_panel(config.sample_data)
     )
+    panel["asset"] = panel["asset"].astype(str)
+    panel["sector"] = panel["sector"].astype(str)
+    logger.info("Building features for %s rows", f"{len(panel):,}")
+    research = build_research_frame(panel, config.horizon, config.execution_lag)
+    training_log = []
+    forecasts, folds = _fit_folds(research, panel, config, "main", training_log)
+    variants = [("main", forecasts, config.execution_lag, False)]
+    if config.robustness:
+        if config.execution_lag:
+            same = forecasts.drop(columns=["label", "future_return"]).merge(
+                forward_returns(panel, config.horizon, 0)[
+                    ["date", "asset", "label", "future_return"]
+                ],
+                on=["date", "asset"],
+                how="inner",
+            )
+            variants.append(("same_close", same, 0, False))
+        variants.append(("cap_neutral_book", forecasts, config.execution_lag, True))
+        logger.info("Building size-neutralized features")
+        neutral = build_research_frame(panel, config.horizon, config.execution_lag, True)
+        neutral_forecasts, neutral_folds = _fit_folds(
+            neutral, panel, config, "size_neutral_features", training_log
+        )
+        folds = pd.concat([folds, neutral_folds], ignore_index=True)
+        variants.extend(
+            [
+                ("size_neutral_features", neutral_forecasts, config.execution_lag, False),
+                ("size_neutral", neutral_forecasts, config.execution_lag, True),
+            ]
+        )
+    metric_rows, portfolios, sectors = [], [], []
+    for name, prediction, lag, neutral_book in variants:
+        logger.info("Evaluating %s", name)
+        metrics, daily, sector = evaluate_predictions(
+            prediction,
+            panel,
+            cost_bps=config.cost_bps,
+            holding_period_days=config.horizon,
+            execution_lag=lag,
+            cap_neutral=neutral_book,
+            bootstrap_samples=config.bootstrap_samples,
+            bootstrap_block_days=config.bootstrap_block_days,
+            seed=config.models.seed,
+        )
+        metric_rows.append(metrics.assign(variant=name, execution_lag=lag))
+        portfolios.append(daily.assign(variant=name, execution_lag=lag))
+        sectors.append(sector.assign(variant=name))
+    metrics = pd.concat(metric_rows, ignore_index=True)
+    portfolios = pd.concat(portfolios, ignore_index=True)
+    sectors = pd.concat(sectors, ignore_index=True)
     report_path = None
     if output_dir is not None:
-        logger.info("Computing factor diagnostics")
+        logger.info("Computing factor diagnostics and attribution")
         decay, spreads = factor_diagnostics(
-            research, panel, all_predictions["date"], config.horizon, config.cost_bps
+            research,
+            panel,
+            forecasts["date"],
+            config.horizon,
+            config.cost_bps,
+            config.execution_lag,
         )
         coverage, coverage_by_date = feature_coverage(
-            research.loc[research["date"].isin(all_predictions["date"])]
+            research.loc[research["date"].isin(forecasts["date"])]
         )
-        metadata = _metadata(config, panel, all_predictions)
+        attribution, loadings = factor_attribution(portfolios, spreads)
         report_path = write_artifacts(
             output_dir,
             metrics,
             portfolios,
             sectors,
-            ic_series(all_predictions),
+            ic_series(forecasts),
             decay,
             spreads,
             coverage,
             coverage_by_date,
-            pd.DataFrame(folds),
-            metadata,
+            folds,
+            _metadata(config, panel, forecasts),
+            attribution,
+            loadings,
+            pd.DataFrame(training_log),
         )
-    return PipelineResult(metrics, portfolios, sectors, all_predictions, report_path)
+    return PipelineResult(metrics, portfolios, sectors, forecasts, report_path)
 
 
 def _git(*args: str) -> str:
@@ -135,6 +211,11 @@ def _metadata(config: PipelineConfig, panel: pd.DataFrame, predictions: pd.DataF
     if config.panel_path is not None:
         parameters.pop("sample_data")
         parameters["panel_path"] = config.panel_path.as_posix()
+    packages = ["numpy", "pandas", "scikit-learn", "scipy", "matplotlib", "pyarrow"]
+    if config.models.include_neural:
+        packages.append("torch")
+    else:
+        parameters["models"] = {"include_neural": False, "seed": config.models.seed}
     return {
         "parameters": parameters,
         "data_source": config.panel_path.as_posix()
@@ -151,12 +232,19 @@ def _metadata(config: PipelineConfig, panel: pd.DataFrame, predictions: pd.DataF
         "git_commit": _git("rev-parse", "HEAD"),
         "git_dirty": bool(_git("status", "--porcelain", "--", "src", "pyproject.toml")),
         "python": platform.python_version(),
-        "versions": {
-            p: version(p)
-            for p in ["numpy", "pandas", "scikit-learn", "scipy", "torch", "matplotlib", "pyarrow"]
-        },
+        "versions": {p: version(p) for p in packages},
         "portfolio_convention": (
-            "long 100%, short 100%; shares held; close execution; final liquidation"
+            f"gross exposure two; shares held; execution lag {config.execution_lag}; "
+            "final liquidation"
         ),
         "ic_convention": "non-overlapping target-horizon signal dates; daily series descriptive",
+        "attribution_convention": (
+            "OLS with intercept; adjusted returns retain alpha; "
+            "net factors matched by execution lag"
+        ),
+        "multiple_comparisons": {
+            "forecasts": 4 if config.models.include_neural else 3,
+            "factors": 7,
+            "interval_adjustment": "none (pointwise)",
+        },
     }

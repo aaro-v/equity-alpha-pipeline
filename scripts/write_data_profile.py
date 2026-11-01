@@ -80,7 +80,8 @@ Factor statistics use out-of-sample signals from {run["test_start"]} through
 {run["test_end"]}, a subset of the panel period. They match
 `reports/real/factor_ics.csv` and the results report. Rank IC uses the centered
 neutralized factor ranks against the next {run["parameters"]["horizon"]} trading
-days' excess return, sampled on non-overlapping signal dates.
+days' excess return after the execution close, sampled on non-overlapping signal
+dates. Execution follows the signal by {run["parameters"]["execution_lag"]} trading day(s).
 
 {factor_table}
 

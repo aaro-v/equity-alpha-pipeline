@@ -28,7 +28,9 @@ def _example() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 def test_daily_pnl_does_not_book_overlapping_forward_labels() -> None:
     predictions, panel = _example()
-    metrics, daily, _ = evaluate_predictions(predictions, panel, cost_bps=0, holding_period_days=2)
+    metrics, daily, _ = evaluate_predictions(
+        predictions, panel, cost_bps=0, holding_period_days=2, execution_lag=0
+    )
     assert daily["gross_return"].tolist() == pytest.approx([0, 0.1, 0.1, 0, 0])
     assert metrics.iloc[0]["portfolio_return"] == pytest.approx(0.21)
     expected = np.sqrt(252) * daily["net_return"].mean() / daily["net_return"].std(ddof=1)
@@ -39,7 +41,7 @@ def test_daily_pnl_does_not_book_overlapping_forward_labels() -> None:
 def test_costs_use_drifted_holdings_and_include_exit() -> None:
     predictions, panel = _example()
     metrics, daily, sectors = evaluate_predictions(
-        predictions, panel, cost_bps=10, holding_period_days=2
+        predictions, panel, cost_bps=10, holding_period_days=2, execution_lag=0
     )
     # Entry 0.002; first two days gain 0.21; rebalance trades 0.210 dollars;
     # liquidation closes 1.208 dollars on each side and costs 0.002416.
@@ -54,7 +56,18 @@ def test_missing_held_return_is_an_error() -> None:
     predictions, panel = _example()
     panel.loc[2, "daily_return"] = np.nan
     with pytest.raises(ValueError, match="missing daily return"):
-        evaluate_predictions(predictions, panel, holding_period_days=2)
+        evaluate_predictions(predictions, panel, holding_period_days=2, execution_lag=0)
+
+
+def test_next_close_execution_does_not_receive_the_execution_days_return() -> None:
+    predictions, panel = _example()
+    metrics, daily, _ = evaluate_predictions(
+        predictions, panel, cost_bps=0, holding_period_days=2, execution_lag=1
+    )
+    assert metrics.iloc[0]["portfolio_return"] == pytest.approx(0.1)
+    assert daily.iloc[0]["date"] == panel["date"].sort_values().unique()[1]
+    assert daily.iloc[0]["gross_return"] == 0
+    assert daily.iloc[0]["signal_date"] == predictions["date"].min()
 
 
 def test_shuffled_labels_destroy_cross_sectional_ic() -> None:

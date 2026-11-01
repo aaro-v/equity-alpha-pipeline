@@ -1,7 +1,7 @@
 name: Research checks
 on: [push, pull_request]
 jobs:
-  synthetic:
+  core:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -13,4 +13,16 @@ jobs:
       - run: ruff check .
       - run: pytest -q
       - run: equity-alpha sample-data --out data/synthetic
-      - run: equity-alpha run --panel data/synthetic/panel.parquet --output-dir reports/ci --no-include-neural
+      - run: equity-alpha run --panel data/synthetic/panel.parquet --output-dir "${{ runner.temp }}/core-reports"
+  neural:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install "torch>=2.2" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install -e ".[dev,data,neural]"
+      - run: pytest -q
+      - run: equity-alpha run --include-neural --neural-epochs 3 --output-dir "${{ runner.temp }}/neural-reports"

@@ -17,15 +17,19 @@ def test_purge_separates_training_label_end_from_test() -> None:
     for split in splits:
         label_end = dates.get_loc(split.train_dates[-1]) + horizon
         assert label_end < dates.get_loc(split.test_dates[0])
+        assert label_end + 1 <= dates.get_loc(split.test_dates[0])
     assert splits[0].test_dates[-1] + pd.offsets.BDay(1) == splits[1].test_dates[0]
 
 
 def test_config_rejects_insufficient_purge() -> None:
     with pytest.raises(ValueError, match="purge_days must be at least horizon"):
         PipelineConfig(horizon=22)
+    with pytest.raises(ValueError, match="execution_lag"):
+        PipelineConfig(execution_lag=2)
 
 
 def test_pipeline_compares_models_with_composite() -> None:
+    pytest.importorskip("torch")
     config = PipelineConfig(
         sample_data=SampleDataConfig(n_assets=24, n_days=330, seed=23),
         walk_forward=WalkForwardConfig(train_days=90, test_days=30, purge_days=15),

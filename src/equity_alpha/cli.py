@@ -77,12 +77,20 @@ def run(
     test_days: Annotated[int, typer.Option(min=5)] = 63,
     purge_days: Annotated[int, typer.Option(min=0)] = 21,
     embargo_days: Annotated[int, typer.Option(min=0)] = 0,
-    include_neural: Annotated[bool, typer.Option()] = True,
-    neural_epochs: Annotated[int, typer.Option(min=1)] = 25,
+    execution_lag: Annotated[
+        int, typer.Option(min=0, help="Trading dates from signal to execution.")
+    ] = 1,
+    robustness: Annotated[
+        bool, typer.Option(help="Run execution and size-control variants.")
+    ] = True,
+    include_neural: Annotated[bool, typer.Option(help="Requires the neural extra.")] = False,
+    neural_epochs: Annotated[int, typer.Option(min=1)] = 100,
 ) -> None:
     """Run purged walk-forward forecasts and daily marked-to-market portfolios."""
-    if purge_days < horizon:
-        raise typer.BadParameter("purge_days must be at least horizon", param_hint="--purge-days")
+    if purge_days < max(horizon, horizon + execution_lag - 1):
+        raise typer.BadParameter(
+            "purge_days must cover horizon and execution lag", param_hint="--purge-days"
+        )
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     config = PipelineConfig(
         sample_data=SampleDataConfig(n_assets=assets, n_days=days, seed=seed),
@@ -91,6 +99,8 @@ def run(
         horizon=horizon,
         cost_bps=cost_bps,
         panel_path=panel,
+        execution_lag=execution_lag,
+        robustness=robustness,
     )
     result = run_research_pipeline(config, output_dir=output_dir)
     typer.echo(result.metrics.to_string(index=False))
