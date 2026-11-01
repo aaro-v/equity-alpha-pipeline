@@ -1,0 +1,46 @@
+{
+  "parameters": {
+    "sample_data": {
+      "n_assets": 100,
+      "n_days": 756,
+      "start": "2018-01-02",
+      "seed": 7
+    },
+    "walk_forward": {
+      "train_days": 504,
+      "test_days": 63,
+      "purge_days": 21,
+      "embargo_days": 0
+    },
+    "models": {
+      "include_neural": true,
+      "neural_epochs": 25,
+      "seed": 17
+    },
+    "horizon": 21,
+    "cost_bps": 5.0,
+    "panel_path": "data\\real\\panel.parquet"
+  },
+  "data_source": "data\\real\\panel.parquet",
+  "panel_start": "2012-01-03",
+  "panel_end": "2026-10-30",
+  "panel_rows": 1391906,
+  "panel_assets": 397,
+  "test_start": "2014-08-13",
+  "test_end": "2026-08-21",
+  "test_assets": 394,
+  "git_commit": "db5cd3968f81d5074a2160fee968359c3a2dff50",
+  "git_dirty": false,
+  "python": "3.12.10",
+  "versions": {
+    "numpy": "2.5.4",
+    "pandas": "3.1.0",
+    "scikit-learn": "1.9.1",
+    "scipy": "1.18.1",
+    "torch": "2.15.0",
+    "matplotlib": "3.11.2",
+    "pyarrow": "26.0.0"
+  },
+  "portfolio_convention": "long 100%, short 100%; shares held; close execution; final liquidation",
+  "ic_convention": "non-overlapping target-horizon signal dates; daily series descriptive"
+}

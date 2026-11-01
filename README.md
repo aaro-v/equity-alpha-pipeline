@@ -1,121 +1,135 @@
-# Cross-Sectional Equity Alpha Research Pipeline
+# Cross-sectional equity alpha
 
-End-to-end Python research pipeline for cross-sectional equity alpha research:
-factor construction, point-in-time hygiene, sector and beta neutralization,
-ranking, portfolio formation, purged walk-forward validation, and model
-comparison across linear, tree-based, and small neural-network forecasters.
+## Research question
 
-This completed research engineering project demonstrates a reproducible
-cross-sectional equity alpha workflow on deterministic synthetic data unless
-explicitly documented otherwise.
+Can linear, tree and small neural models turn familiar equity factors into better
+out-of-sample forecasts than an equal-weight composite? This project tests that
+question with rolling historical training windows and a long-short quintile book.
 
-## Target Resume Bullets
+## Data
 
-- Built a deterministic point-in-time synthetic equity panel with prices,
-  sectors, market caps, fundamentals, liquidity, benchmark returns, and
-  availability dates.
-- Constructed value, momentum, quality, volatility, size, beta, and liquidity
-  factors with sector/beta neutralization, cross-sectional ranking, and
-  forward-return labels excluded from features.
-- Implemented purged walk-forward validation comparing ridge, tree-based, and
-  small neural-network return forecasters.
-- Evaluated factor and portfolio behavior with IC, rank IC, turnover,
-  transaction costs, drawdown, sector attribution, long-short returns, and
-  reproducible CLI artifacts.
+The saved experiment uses 397 current S&P 500 constituents outside
+Financials and Real Estate, with 1,391,906 observations from
+2012-01-03 through 2026-10-30. Yahoo Finance supplies adjusted daily
+prices, SEC EDGAR supplies first-filed financial statements, and Wikipedia supplies
+the current constituent list and sectors. Vendor data is kept locally in ignored
+`data/real/` and `.cache/`; it is excluded from the repository because it cannot be
+redistributed under the data source's terms.
 
-## Development
+Fundamentals enter the panel on the business day after filing and expire when
+older than the builder's staleness limit. Price features use trailing observations.
+Missing fundamentals remain in the universe: missing factor ranks are imputed to
+zero after centering. Quality is observed for 71.2%
+of out-of-sample company dates. Recently listed names need sufficient price history
+before becoming eligible. The universe is selected from current constituents, so
+historical results contain survivorship bias.
+
+The data builder writes daily prices, quarterly fundamentals, a universe table and
+a modeling panel. The deterministic synthetic generator writes the same schemas,
+using market and sector factors, Student-t innovations, quarterly filing dates,
+persistent fundamentals and weak latent alpha. The saved distribution checks in
+[the real profile](reports/real/data_profile.json) and
+[the synthetic profile](reports/synthetic/data_profile.json) show the approximation;
+synthetic data does not reproduce historical crisis tails.
+
+## Method
+
+Value, momentum, quality, low volatility, size, beta and liquidity are winsorized,
+standardized, neutralized and ranked within each date. Positive book-to-price is
+required for value. Sector and beta exposures are removed before ranking; beta
+itself is only sector-neutralized, since regressing it on itself would leave
+numerical noise. The benchmark is the mean of the seven centered ranks.
+
+The target is stock total return minus compounded SPY return over the next 21
+trading days, excluding the signal day. Rolling windows contain 504 training days,
+a 21-day purge and 63 test days; test windows are contiguous. Ridge, histogram
+gradient boosting and a small ReLU network use the settings fixed in
+[the experiment protocol](docs/EXPERIMENT.md), without tuning on test results.
+
+At each rebalance the top and bottom quintiles receive long and short exposure
+equal to the pre-trade NAV on each side. Shares are held for 21 trading days and
+marked daily. Costs are 5 bp per dollar traded against drifted holdings, including
+initial entry and final liquidation. Returns compound daily and Sharpe uses daily
+net P&L. The signal-close execution assumption is idealized. Linear factor
+neutralization does not guarantee beta or sector neutrality of the quantile book.
+
+IC summaries and their t-statistics use non-overlapping target-horizon signal dates.
+Factor diagnostics include raw and neutralized IC, decay at 1, 5, 10, 21 and 63 days,
+and daily returns of each factor's quintile spread. The annual IC chart averages
+daily IC with overlapping targets and is descriptive, without daily-sample t-tests.
+
+## Real-data results
+
+Out-of-sample signals run from 2014-08-13 through 2026-08-21.
+The table is generated from [saved metrics](reports/real/metrics.csv); run parameters,
+dependency versions and the source commit are in [run.json](reports/real/run.json).
+
+| Forecast | Monthly rank IC | Net annual return | Daily net Sharpe | Max drawdown | Annual one-way turnover per side |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Equal-weight composite | 0.0012 | -0.2% | 0.03 | -33.7% | 3.77x |
+| Ridge | 0.0156 | 9.1% | 0.71 | -22.2% | 2.98x |
+| Gradient boosting | 0.0107 | 5.6% | 0.49 | -23.4% | 4.45x |
+| Neural network | 0.0009 | 1.1% | 0.18 | -28.7% | 4.75x |
+
+Ridge and gradient boosting have higher realized Sharpe than the composite in this
+sample. Their mean rank IC is small, and the non-overlapping IC t-statistics do not
+provide strong evidence of a stable forecasting effect. The neural model adds
+little rank information. Signs, costs and drawdowns are reported without selecting
+a more favorable configuration. See [the result notes](docs/RESULTS.md) for factor
+findings, comparisons with the expected ranges and rebuild verification.
+
+![Cumulative out-of-sample net long-short return](reports/real/equity_curve.png)
+
+![Rank IC by year](reports/real/ic_by_year.png)
+
+[The synthetic run](reports/synthetic/research_report.md) uses the same model and
+walk-forward settings and serves as a reproducible distribution and accounting
+check; its results are not evidence about market performance.
+
+## Limitations
+
+Current-constituent survivorship, imperfect XBRL concept matching, revised vendor
+prices, idealized close execution, unmodeled borrow and financing costs, and a
+single fixed universe limit the economic interpretation of the backtest.
+
+## Reproduce
+
+Create and activate a Python virtual environment, then install and check the package:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-pytest
+pip install -e ".[dev,data]"
+ruff check .
+pytest -q
 ```
 
-## Run The Sample Pipeline
+Rebuild private data locally (set `SEC_USER_AGENT` to a suitable name and contact
+before downloading), then run the real experiment:
 
 ```bash
-equity-alpha run --output-dir reports/generated
+equity-alpha build-data --out data/real
+equity-alpha run --panel data/real/panel.parquet --output-dir reports/real
+equity-alpha profile-data --panel data/real/panel.parquet --out reports/real/data_profile.json
 ```
 
-The command generates deterministic synthetic data in memory, constructs
-point-in-time factors, creates forward excess-return labels, runs purged
-walk-forward validation, fits ridge/tree/neural baselines, forms long-short
-portfolios, and writes artifacts:
+The universe and provider responses can change. The committed report describes the
+supplied snapshot, and a fresh download need not reproduce it bit for bit. To compare
+against a local snapshot, rebuild into a separate directory and run
+`scripts/check_rebuild.py` with `--reference`, `--rebuilt` and `--out` paths.
 
-- `reports/generated/metrics.csv`
-- `reports/generated/portfolio_returns.csv`
-- `reports/generated/sector_attribution.csv`
-- `reports/generated/predictions.parquet`
-- `reports/generated/equity_curve.png`
-- `reports/generated/research_report.md`
-- `reports/generated/manifest.json`
-
-## Sample Results
-
-The chart below is produced with `equity-alpha run --output-dir reports/generated`
-from deterministic synthetic data. It is useful for validating ranking,
-walk-forward portfolio formation, cost handling, and report generation; it is
-not a live-market performance claim.
-
-![Walk-forward long-short equity curve](reports/generated/equity_curve.png)
-
-For a faster smoke run without PyTorch training:
+No vendor access is needed for a synthetic run. The default generator is a small
+sample; the saved synthetic report uses a longer history:
 
 ```bash
-equity-alpha run --no-include-neural --assets 50 --days 500
+equity-alpha sample-data --out data/synthetic --days 2016
+equity-alpha run --panel data/synthetic/panel.parquet --output-dir reports/synthetic
+equity-alpha profile-data --panel data/synthetic/panel.parquet \
+  --out reports/synthetic/data_profile.json
+python scripts/write_readme.py
+python scripts/write_result_notes.py
+python scripts/render_figures.py reports/real reports/synthetic
 ```
 
-Research controls can be set from the CLI for deterministic scenario checks:
-
-```bash
-equity-alpha run \
-  --horizon 10 \
-  --cost-bps 2.5 \
-  --train-days 126 \
-  --test-days 42 \
-  --purge-days 10 \
-  --embargo-days 5 \
-  --no-include-neural
-```
-
-To write only the deterministic sample panel:
-
-```bash
-equity-alpha sample-data --output data/cache/sample_panel.parquet
-```
-
-## Implemented Scope
-
-- Deterministic synthetic US-equity-like panel with prices, sectors, market
-  caps, fundamentals, liquidity, benchmark returns, and explicit availability
-  dates.
-- Point-in-time factor construction for value, momentum, quality, volatility,
-  size, beta, and liquidity signals.
-- Sector and beta neutralization, cross-sectional ranking, and future labels
-  that are excluded from features.
-- Purged and embargo-stepped walk-forward validation.
-- Ridge, histogram gradient boosting, and small PyTorch neural-network
-  forecasters.
-- IC, rank IC, turnover, gross/net exposure, cost-adjusted Sharpe, drawdown,
-  sector attribution, signal spread diagnostics, positive-return rate,
-  long-short portfolio returns, and generated Markdown/CSV/PNG artifacts with a
-  checksum manifest.
-
-The generated outputs are for engineering validation only. They use synthetic
-data and should not be read as evidence of live-market profitability.
-
-## Project Layout
-
-```text
-src/equity_alpha/
-  data/          Deterministic sample panel generation
-  research/      Factor construction and model baselines
-  validation/    Purged walk-forward split logic
-  portfolio/     Long-short portfolio construction and evaluation
-  reporting/     CSV, Markdown, Parquet, and PNG artifact writers
-  workflow/      End-to-end pipeline orchestration
-  cli.py         Typer command line interface
-tests/           Unit and CLI coverage for each layer
-reports/         Reproducible generated research artifacts
-```
+Without `--panel`, `equity-alpha run` generates the default synthetic panel in memory.
+Use `--no-include-neural` for a faster run. CI generates synthetic data and runs the
+same parquet-loading path; the real-schema check is skipped when private data is absent.
+Reports contain aggregate tables and figures, with no saved company-level predictions.

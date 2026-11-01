@@ -50,6 +50,7 @@ def write_artifacts(
     (output_dir / "run.json").write_text(json.dumps(metadata, indent=2, default=str) + "\n")
     _plot_curves(curves, output_dir)
     _plot_ic(correlations, output_dir)
+    _plot_decay(factor_decay, output_dir)
     report = output_dir / "research_report.md"
     report.write_text(
         "# Walk-forward research results\n\n"
@@ -71,7 +72,8 @@ def write_artifacts(
             ],
         )
         + "\n\n![Cumulative net return](equity_curve.png)\n\n"
-        "![Annual rank IC](ic_by_year.png)\n",
+        "![Annual rank IC](ic_by_year.png)\n\n"
+        "![Factor IC decay](factor_decay.png)\n",
         encoding="utf-8",
     )
     return report
@@ -114,3 +116,30 @@ def _plot_ic(correlations: pd.DataFrame, out: Path) -> None:
     ax.legend(frameon=False, ncol=4)
     fig.savefig(out / "ic_by_year.png", dpi=150)
     plt.close(fig)
+
+
+def _plot_decay(decay: pd.DataFrame, out: Path) -> None:
+    fig, ax = plt.subplots(figsize=(8, 4.5), layout="constrained")
+    for factor, frame in decay.loc[decay["variant"].eq("neutral_rank")].groupby("factor"):
+        frame = frame.sort_values("horizon")
+        ax.plot(frame["horizon"], frame["mean_rank_ic"], marker="o", label=factor)
+    ax.axhline(0, color="gray", linewidth=0.7)
+    ax.set(
+        xlabel="Forward horizon (trading days)",
+        ylabel="Mean rank IC",
+        title="Factor IC decay (non-overlapping signal samples)",
+    )
+    ax.set_xticks(sorted(decay["horizon"].unique()))
+    ax.legend(frameon=False, ncol=2)
+    ax.grid(alpha=0.15)
+    fig.savefig(out / "factor_decay.png", dpi=150)
+    plt.close(fig)
+
+
+def render_figures(output_dir: Path) -> None:
+    """Regenerate the three figures from saved aggregate tables without vendor access."""
+    curves = pd.read_csv(output_dir / "portfolio_returns.csv", parse_dates=["date"])
+    correlations = pd.read_csv(output_dir / "ic_series.csv", parse_dates=["date"])
+    _plot_curves(curves, output_dir)
+    _plot_ic(correlations, output_dir)
+    _plot_decay(pd.read_csv(output_dir / "factor_decay.csv"), output_dir)

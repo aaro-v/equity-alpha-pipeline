@@ -1,0 +1,77 @@
+{
+  "reference": "data\\real",
+  "rebuilt": "data\\real\\rebuilt",
+  "reference_rows": 1391906,
+  "rebuilt_rows": 1391906,
+  "common_rows": 1391906,
+  "common_assets": 397,
+  "reference_assets": 397,
+  "rebuilt_assets": 397,
+  "successful_downloads": 397,
+  "skipped_downloads": 0,
+  "columns": {
+    "price": {
+      "common_finite_rows": 1391906,
+      "max_absolute_difference": 0.00048828125,
+      "mean_absolute_difference": 8.03844795882469e-06,
+      "missingness_disagreements": 0,
+      "share_close_rtol_1e_4": 1.0
+    },
+    "daily_return": {
+      "common_finite_rows": 1391847,
+      "max_absolute_difference": 1.8533319234848022e-06,
+      "mean_absolute_difference": 1.5073632653184177e-07,
+      "missingness_disagreements": 0,
+      "share_close_rtol_1e_4": 0.9400721025701448
+    },
+    "benchmark_return": {
+      "common_finite_rows": 1391906,
+      "max_absolute_difference": 1.2639793567359447e-06,
+      "mean_absolute_difference": 2.0040297954437847e-07,
+      "missingness_disagreements": 0,
+      "share_close_rtol_1e_4": 0.8501558294884856
+    },
+    "market_cap": {
+      "common_finite_rows": 1327695,
+      "max_absolute_difference": 0.0,
+      "mean_absolute_difference": 0.0,
+      "missingness_disagreements": 0,
+      "share_close_rtol_1e_4": 1.0
+    },
+    "dollar_volume": {
+      "common_finite_rows": 1391375,
+      "max_absolute_difference": 0.0,
+      "mean_absolute_difference": 0.0,
+      "missingness_disagreements": 0,
+      "share_close_rtol_1e_4": 1.0
+    },
+    "book_to_price": {
+      "common_finite_rows": 1327487,
+      "max_absolute_difference": 0.0,
+      "mean_absolute_difference": 0.0,
+      "missingness_disagreements": 0,
+      "share_close_rtol_1e_4": 1.0
+    },
+    "gross_margin": {
+      "common_finite_rows": 983083,
+      "max_absolute_difference": 0.0,
+      "mean_absolute_difference": 0.0,
+      "missingness_disagreements": 0,
+      "share_close_rtol_1e_4": 1.0
+    },
+    "accruals": {
+      "common_finite_rows": 1312788,
+      "max_absolute_difference": 0.0,
+      "mean_absolute_difference": 0.0,
+      "missingness_disagreements": 0,
+      "share_close_rtol_1e_4": 1.0
+    },
+    "debt_to_equity": {
+      "common_finite_rows": 1391873,
+      "max_absolute_difference": 0.0,
+      "mean_absolute_difference": 0.0,
+      "missingness_disagreements": 0,
+      "share_close_rtol_1e_4": 1.0
+    }
+  }
+}

@@ -1,0 +1,37 @@
+sector,net_return_contribution,model
+Communication Services,0.03593644227,composite
+Consumer Discretionary,-0.01046545077,composite
+Consumer Staples,0.04158383827,composite
+Energy,-0.0135394129,composite
+Health Care,-0.02422868164,composite
+Industrials,-0.08826221491,composite
+Information Technology,0.09663498047,composite
+Materials,0.02463131028,composite
+Utilities,-0.03049557515,composite
+Communication Services,0.05918926949,ridge
+Consumer Discretionary,0.07830845495,ridge
+Consumer Staples,0.03522283724,ridge
+Energy,0.142514285,ridge
+Health Care,0.1461622871,ridge
+Industrials,0.2173238977,ridge
+Information Technology,0.3155892188,ridge
+Materials,0.0675867592,ridge
+Utilities,0.09224376412,ridge
+Communication Services,0.02788320993,tree
+Consumer Discretionary,0.1301459595,tree
+Consumer Staples,-0.04690563968,tree
+Energy,-0.06793814127,tree
+Health Care,0.1709356309,tree
+Industrials,0.02981969667,tree
+Information Technology,0.569545217,tree
+Materials,0.08819968304,tree
+Utilities,-0.1465053475,tree
+Communication Services,0.0002186966955,neural
+Consumer Discretionary,0.1362359636,neural
+Consumer Staples,-0.01843815216,neural
+Energy,-0.05638223725,neural
+Health Care,0.01673884002,neural
+Industrials,-0.1652742019,neural
+Information Technology,0.3406787838,neural
+Materials,-0.05999134705,neural
+Utilities,-0.02094154395,neural
