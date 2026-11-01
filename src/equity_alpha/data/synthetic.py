@@ -76,7 +76,8 @@ def generate_sample_tables(config: SampleDataConfig | None = None) -> dict[str, 
         persistent_quality = quality[i] + np.cumsum(rng.normal(0, 0.04, q))
         equity = caps[i] * np.exp(-1.47 + 0.85 * persistent_value)
         margin = np.clip(0.438 + 0.22 * persistent_quality, 0.03, 0.95)
-        if sectors[i] in {"Utilities", "Energy"} or (sectors[i] == "Industrials" and i % 3 == 0):
+        transport = sectors[i] == "Industrials" and (i // len(SECTORS)) % 3 != 2
+        if sectors[i] in {"Utilities", "Energy"} or transport:
             margin[:] = np.nan
         debt = np.minimum(50, np.exp(0.57 - 0.9 * quality[i] + rng.normal(0, 0.08, q)))
         if distressed[i]:
@@ -152,7 +153,7 @@ def generate_sample_tables(config: SampleDataConfig | None = None) -> dict[str, 
                 "yahoo_symbol": asset,
                 "name": f"Synthetic company {i}",
                 "sector": sectors[i],
-                "sub_industry": "Synthetic",
+                "sub_industry": "Transportation" if transport else "Synthetic",
                 "cik": i + 1,
                 "date_added": str(dates[0].date()),
                 "status": "ok",

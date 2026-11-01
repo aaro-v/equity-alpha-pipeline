@@ -19,6 +19,8 @@ def test_sample_is_deterministic_and_filings_are_available() -> None:
     panel = tables["panel.parquet"]
     assert (panel["fundamentals_available_date"] <= panel["date"]).all()
     assert panel.loc[panel["sector"].eq("Utilities"), "gross_margin"].isna().all()
+    industrials = panel.loc[panel["sector"].eq("Industrials")]
+    assert industrials.groupby("asset", observed=True)["gross_margin"].count().eq(0).any()
     assert panel["market_cap"].median() > 1e9
     assert panel["dollar_volume"].median() > 1e7
     filings = tables["fundamentals_quarterly.parquet"]
