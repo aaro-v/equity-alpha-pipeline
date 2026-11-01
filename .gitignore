@@ -10,19 +10,9 @@ data/cache/
 data/real/
 data/synthetic/
 .cache/
-_handoff/
 reports/checks/
 reports/generated/*
 dist/
 build/
 *.egg-info/
 .DS_Store
-
-# Local workspace context
-.open[c]law/
-AGENTS.md
-HEARTBEAT.md
-IDENTITY.md
-SOUL.md
-TOOLS.md
-USER.md

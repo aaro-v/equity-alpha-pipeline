@@ -32,6 +32,7 @@ for model, name in names.items():
         f"{m.annual_one_way_turnover_per_side:.2f}x |"
     )
 table = "\n".join(rows)
+strongest_ic_t = metrics["rank_ic_t_stat"].abs().max()
 text = f"""# Cross-sectional equity alpha
 
 ## Research question
@@ -46,9 +47,7 @@ The saved experiment uses {profile["assets"]:,} current S&P 500 constituents out
 Financials and Real Estate, with {profile["rows"]:,} observations from
 {profile["start"]} through {profile["end"]}. Yahoo Finance supplies adjusted daily
 prices, SEC EDGAR supplies first-filed financial statements, and Wikipedia supplies
-the current constituent list and sectors. Vendor data is kept locally in ignored
-`data/real/` and `.cache/`; it is excluded from the repository because it cannot be
-redistributed under the data source's terms.
+the current constituent list and sectors.
 
 Fundamentals enter the panel on the business day after filing and expire when
 older than the builder's staleness limit. Price features use trailing observations.
@@ -78,7 +77,7 @@ The target is stock total return minus compounded SPY return over the next 21
 trading days, excluding the signal day. Rolling windows contain 504 training days,
 a 21-day purge and 63 test days; test windows are contiguous. Ridge, histogram
 gradient boosting and a small ReLU network use the settings fixed in
-[the experiment protocol](docs/EXPERIMENT.md), without tuning on test results.
+[the experiment protocol](docs/EXPERIMENT.md).
 
 At each rebalance the top and bottom quintiles receive long and short exposure
 equal to the pre-trade NAV on each side. Shares are held for 21 trading days and
@@ -100,20 +99,17 @@ dependency versions and the source commit are in [run.json](reports/real/run.jso
 
 {table}
 
-Ridge and gradient boosting have higher realized Sharpe than the composite in this
-sample. Their mean rank IC is small, and the non-overlapping IC t-statistics do not
-provide strong evidence of a stable forecasting effect. The neural model adds
-little rank information. Signs, costs and drawdowns are reported without selecting
-a more favorable configuration. See [the result notes](docs/RESULTS.md) for factor
-findings, comparisons with the expected ranges and rebuild verification.
+The largest absolute monthly rank IC t-statistic across forecasts is
+{strongest_ic_t:.2f}. The estimates remain subject to sampling uncertainty and the
+limitations below. Model IC t-statistics and factor-level results appear in
+[the result notes](docs/RESULTS.md), alongside the data rebuild comparison.
 
 ![Cumulative out-of-sample net long-short return](reports/real/equity_curve.png)
 
 ![Rank IC by year](reports/real/ic_by_year.png)
 
 [The synthetic run](reports/synthetic/research_report.md) uses the same model and
-walk-forward settings and serves as a reproducible distribution and accounting
-check; its results are not evidence about market performance.
+walk-forward settings to exercise the data handling and portfolio accounting.
 
 ## Limitations
 
@@ -131,7 +127,7 @@ ruff check .
 pytest -q
 ```
 
-Rebuild private data locally (set `SEC_USER_AGENT` to a suitable name and contact
+Rebuild the market panel (set `SEC_USER_AGENT` to a suitable name and contact
 before downloading), then run the real experiment:
 
 ```bash
@@ -141,7 +137,7 @@ equity-alpha profile-data --panel data/real/panel.parquet --out reports/real/dat
 ```
 
 The universe and provider responses can change. The committed report describes the
-supplied snapshot, and a fresh download need not reproduce it bit for bit. To compare
+recorded snapshot, and a fresh download need not reproduce it bit for bit. To compare
 against a local snapshot, rebuild into a separate directory and run
 `scripts/check_rebuild.py` with `--reference`, `--rebuilt` and `--out` paths.
 
@@ -155,12 +151,13 @@ equity-alpha profile-data --panel data/synthetic/panel.parquet \\
   --out reports/synthetic/data_profile.json
 python scripts/write_readme.py
 python scripts/write_result_notes.py
+python scripts/write_data_profile.py
 python scripts/render_figures.py reports/real reports/synthetic
 ```
 
 Without `--panel`, `equity-alpha run` generates the default synthetic panel in memory.
 Use `--no-include-neural` for a faster run. CI generates synthetic data and runs the
 same parquet-loading path; the real-schema check is skipped when private data is absent.
-Reports contain aggregate tables and figures, with no saved company-level predictions.
+Reports contain aggregate tables and figures.
 """
 (root / "README.md").write_text(text, encoding="utf-8")

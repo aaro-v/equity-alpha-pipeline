@@ -1,72 +1,71 @@
-# Real data profile: equity panel
+# Equity panel data profile
 
-Summary statistics of `data/panel.parquet` and its companion files, computed
-from the real data. Use them to calibrate the synthetic generator so that the
-synthetic panel behaves like the real one, and as a sanity reference when
-reading backtest output. Nothing here is raw vendor data.
+The real panel contains 397 companies, 3,729
+trading dates and 1,391,906 company-date observations, from
+2012-01-03 through 2026-10-30. Full-panel distributions below use that
+entire period. Their source is `reports/real/data_profile.json`.
 
-The synthetic generator should reproduce, roughly: the volatility and beta
-distributions; a one-factor-plus-sector correlation structure (about 0.30
-overall, 0.40 within sector); fat-tailed daily returns; fundamentals that move
-in steps on quarterly filing dates about 35 days after period end, with very
-persistent cross-sectional ranks; missing gross margin for whole sectors
-(utilities, transports, integrated oil); and weak signals. No feature has a
-monthly rank IC above about 0.025 in absolute value on the real data, so a
-synthetic signal much stronger than that will make every model look better
-than it can be on real data.
+## Returns
 
-Universe: 397 companies, 3729 trading days (2012-01-03 to 2026-10-30), 1,391,906 rows.
+Volatility is each company's sample standard deviation of daily total returns,
+annualized by sqrt(252). Beta is estimated against SPY over each company's
+available observations. The table reports cross-sectional quantiles of those
+company-level statistics.
 
-| GICS sector | companies |
-|---|---|
-| Industrials | 83 |
-| Information Technology | 75 |
-| Health Care | 60 |
-| Consumer Discretionary | 47 |
-| Consumer Staples | 34 |
-| Utilities | 31 |
-| Materials | 24 |
-| Communication Services | 22 |
-| Energy | 21 |
+| Statistic | p10 | p25 | p50 | p75 | p90 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Annualized stock volatility | 0.220 | 0.254 | 0.298 | 0.382 | 0.466 |
+| Beta to SPY | 0.554 | 0.770 | 0.985 | 1.184 | 1.449 |
 
-Daily returns (total return, adjusted close)
+Mean pairwise correlation is 0.281, with
+0.379 within sectors and
+0.266 between sectors. Pooled daily-return
+excess kurtosis is 62.41;
+2.90% of company-date returns exceed 5% in
+absolute value. Pairwise correlations exclude self-correlations.
 
-| statistic | value |
-|---|---|
-| benchmark (SPY) annualised return / vol | 0.152 / 0.165 |
-| stock annualised vol, p10/p25/p50/p75/p90 | 0.22 / 0.254 / 0.298 / 0.382 / 0.466 |
-| beta to SPY, p10/p25/p50/p75/p90 | 0.544 / 0.77 / 0.994 / 1.19 / 1.52 |
-| mean pairwise correlation (2015 onward) | 0.301 |
-| mean correlation, same sector / different sector | 0.406 / 0.285 |
-| daily return kurtosis (pooled) / share of days with abs return > 5% | 62.4 / 0.0272 |
+## Fundamentals
 
-Cross-sectional fundamentals (month-end samples pooled over time)
+These distributions pool observations at the last trading date of each calendar
+month. Ratios are reported in their original units; market capitalization and
+dollar volume are scaled as indicated.
 
-| field | missing share | p10 / p25 / p50 / p75 / p90 |
-|---|---|---|
-| book_to_price | 0.046 | 0.037 / 0.109 / 0.231 / 0.413 / 0.622 |
-| gross_margin | 0.294 | 0.175 / 0.3 / 0.438 / 0.622 / 0.759 |
-| accruals | 0.057 | -0.103 / -0.0679 / -0.0411 / -0.0203 / 0.00269 |
-| debt_to_equity | 0.000 | 0.569 / 0.98 / 1.76 / 3.48 / 50 |
-| log10 market_cap (USD) | 0.046 | 9.83 / 10.1 / 10.4 / 10.8 / 11.1 |
-| log10 dollar_volume (21d avg, USD) | 0.000 | 7.69 / 8 / 8.29 / 8.6 / 8.9 |
+| Field | Missing share | p10 | p25 | p50 | p75 | p90 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| book_to_price | 4.62% | 0.037 | 0.108 | 0.231 | 0.412 | 0.621 |
+| gross_margin | 29.36% | 0.175 | 0.300 | 0.438 | 0.622 | 0.759 |
+| accruals | 5.65% | -0.103 | -0.068 | -0.041 | -0.020 | 0.003 |
+| debt_to_equity | 0.00% | 0.569 | 0.981 | 1.762 | 3.483 | 50.000 |
+| market_cap (USD billions) | 4.61% | 6.860 | 12.570 | 24.934 | 56.755 | 139.302 |
+| dollar_volume (USD millions) | 0.04% | 49.371 | 101.816 | 196.179 | 399.296 | 809.149 |
 
-Filings: median lag from period end to filing 35 days (p90 59); median spacing between balance-sheet filings 91 days. Fundamentals change in steps on filing dates, not daily.
-Rank persistence quarter to quarter (cross-sectional rank correlation, 63 trading days apart): book_to_price 0.98, gross_margin 0.99, accruals 0.85, debt_to_equity 0.98.
+## Factor results
 
-Monthly rank IC of each neutralised feature against the 21-day forward excess return (non-overlapping months, 2013 onward)
+Factor statistics use out-of-sample signals from 2014-08-13 through
+2026-08-21, a subset of the panel period. They match
+`reports/real/factor_ics.csv` and the results report. Rank IC uses the centered
+neutralized factor ranks against the next 21 trading
+days' excess return, sampled on non-overlapping signal dates.
 
-| feature | mean rank IC | IC std | t-stat | share positive |
-|---|---|---|---|---|
-| value | -0.0188 | 0.101 | -2.39 | 0.40 |
-| momentum | +0.0105 | 0.138 | +0.98 | 0.50 |
-| quality | -0.0063 | 0.091 | -0.88 | 0.49 |
-| low_volatility | -0.0017 | 0.094 | -0.24 | 0.48 |
-| size | +0.0231 | 0.100 | +2.95 | 0.60 |
-| beta | +0.0000 | 0.223 | +0.00 | 0.51 |
-| liquidity | -0.0172 | 0.093 | -2.37 | 0.44 |
+| Factor | Mean rank IC | IC standard deviation | IC t-statistic | Observations |
+| --- | ---: | ---: | ---: | ---: |
+| value | -0.0118 | 0.1141 | -1.24 | 144 |
+| momentum | 0.0047 | 0.1359 | 0.41 | 144 |
+| quality | -0.0075 | 0.0760 | -1.18 | 144 |
+| low_volatility | -0.0072 | 0.0939 | -0.92 | 144 |
+| size | 0.0247 | 0.0946 | 3.14 | 144 |
+| beta | 0.0156 | 0.1716 | 1.09 | 144 |
+| liquidity | -0.0209 | 0.0887 | -2.83 | 144 |
 
-The positive size IC is partly survivorship bias: the universe is today's
-S&P 500, so small companies in the sample are the ones that went on to grow
-into the index. Value had a weak decade in US large caps, so its negative IC
-over 2013-2026 is expected, not a bug.
+The universe is selected from current constituents and therefore contains
+survivorship bias. Beta is sector-neutralized; the other factors are neutralized
+against both sector and beta.
+
+Regenerate the panel summary and this document with:
+
+```bash
+equity-alpha profile-data --panel data/real/panel.parquet --out reports/real/data_profile.json
+python scripts/write_data_profile.py
+```
+
+Factor statistics are produced by the real-panel research run described in the README.

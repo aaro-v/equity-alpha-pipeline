@@ -1,6 +1,6 @@
 # Walk-forward research results
 
-Source: `data\real\panel.parquet`. Test signals: 2014-08-13 through 2026-08-21.
+Source: `data/real/panel.parquet`. Test signals: 2014-08-13 through 2026-08-21.
 
 IC summaries use non-overlapping signal dates; Sharpe uses daily net returns. The book holds shares between rebalances and pays costs on actual traded dollars, including entry and final liquidation. Sector contributions sum arithmetic daily net returns and do not add to compounded total return.
 
@@ -14,3 +14,5 @@ IC summaries use non-overlapping signal dates; Sharpe uses daily net returns. Th
 ![Cumulative net return](equity_curve.png)
 
 ![Annual rank IC](ic_by_year.png)
+
+![Factor IC decay](factor_decay.png)
